@@ -1,36 +1,36 @@
 import { useNavigate } from 'react-router-dom';
-import { UserCircle, Building2, Heart } from 'lucide-react';
+import { Pill, Stethoscope, UserCog } from 'lucide-react';
 
-export type Platform = 'mmg' | 'clinici-iov' | 'paziente';
+export type Platform = 'farmacista' | 'clinico' | 'admin';
 
 function PlatformSelector() {
   const navigate = useNavigate();
   const platforms = [
     {
-      id: 'mmg' as Platform,
-      icon: UserCircle,
-      title: 'MMG',
-      description: 'Area Medici di Medicina Generale',
+      id: 'farmacista' as Platform,
+      icon: Pill,
+      title: 'Farmacista',
+      description: 'Onboarding pazienti e gestione terapie',
       color: 'bg-iov-light-blue',
       textColor: 'text-iov-dark-blue-text',
       iconColor: 'text-iov-dark-blue-text',
       borderColor: 'border-iov-light-blue-dark',
     },
     {
-      id: 'clinici-iov' as Platform,
-      icon: Building2,
-      title: 'Clinici IOV',
-      description: 'Area Clinici Istituto Oncologico Veneto',
+      id: 'clinico' as Platform,
+      icon: Stethoscope,
+      title: 'Clinico',
+      description: 'Approvazione richieste e gestione pazienti',
       color: 'bg-iov-pink',
       textColor: 'text-iov-pink-text',
       iconColor: 'text-iov-pink-text',
       borderColor: 'border-iov-pink-border',
     },
     {
-      id: 'paziente' as Platform,
-      icon: Heart,
-      title: 'Paziente',
-      description: 'Area Pazienti',
+      id: 'admin' as Platform,
+      icon: UserCog,
+      title: 'Admin',
+      description: 'Gestione utenti e sistema',
       color: 'bg-iov-yellow',
       textColor: 'text-iov-yellow-text',
       iconColor: 'text-iov-yellow-text',
@@ -43,10 +43,10 @@ function PlatformSelector() {
       <div className="max-w-5xl w-full">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-iov-dark-blue mb-4">
-            Demo Punto Di Accoglienza IOV
+            Gestione Terapia Oncologica IOV
           </h1>
           <p className="text-lg sm:text-xl text-iov-gray-text">
-            Seleziona la piattaforma di accesso
+            Seleziona il tipo di accesso
           </p>
         </div>
 
@@ -57,13 +57,7 @@ function PlatformSelector() {
               <button
                 key={platform.id}
                 onClick={() => {
-                  if (platform.id === 'mmg') {
-                    navigate('/MMG');
-                  } else if (platform.id === 'clinici-iov') {
-                    navigate('/clinici-iov');
-                  } else if (platform.id === 'paziente') {
-                    navigate('/paziente');
-                  }
+                  navigate(`/login/${platform.id}`);
                 }}
                 className={`${platform.color} rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 text-left group hover:-translate-y-2 border-2 ${platform.borderColor} hover:border-opacity-100 border-opacity-50 relative overflow-hidden flex flex-col h-full`}
               >
@@ -91,7 +85,7 @@ function PlatformSelector() {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-iov-gray-text opacity-75">
-            Demo - Ogni stakeholder può accedere solo alla propria piattaforma
+            Demo - Sistema di gestione terapia oncologica IOV
           </p>
         </div>
       </div>
