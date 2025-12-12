@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { RotateCcw, Lock, Plus, Edit2 } from 'lucide-react';
+import { RotateCcw, Lock, Plus, Edit2, AlertCircle } from 'lucide-react';
 import { mockAdminUsers } from '../../data/mockData';
+import { useNavigate } from 'react-router-dom';
 
 function UsersManagement() {
+    const navigate = useNavigate();
     const [users, setUsers] = useState(mockAdminUsers);
     const [disabledUsers, setDisabledUsers] = useState<string[]>([]);
     const [showNewUserForm, setShowNewUserForm] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', name: '', surname: '', role: 'clinico' as 'clinico' | 'farmacista' });
     const [roleMenuOpen, setRoleMenuOpen] = useState<string | null>(null);
+
+    // Mock count of pending registration requests
+    const pendingRegistrations = 3;
 
     const handleResetPassword = (userId: string) => {
         alert(`Password resettata per utente ID: ${userId}`);
@@ -55,6 +60,30 @@ function UsersManagement() {
                 <h1 className="text-2xl font-bold text-iov-dark-blue mb-2">Area Gestione Utenze Clinico</h1>
                 <p className="text-iov-gray-text">Crea, modifica o disabilita utenze dei clinici.</p>
             </div>
+
+            {/* Urgent alert for pending registrations */}
+            {pendingRegistrations > 0 && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-6">
+                    <div className="flex items-center gap-3">
+                        <AlertCircle className="w-8 h-8 text-yellow-600 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="text-lg font-bold text-yellow-900 mb-1">
+                                Attenzione: Richieste di Registrazione in Attesa
+                            </h3>
+                            <p className="text-yellow-800">
+                                Ci sono <strong>{pendingRegistrations}</strong> richieste di registrazione in attesa. Rivedi e approva le
+                                richieste per permettere l'accesso ai nuovi utenti.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => navigate('/admin/registrazioni')}
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition-colors whitespace-nowrap"
+                        >
+                            Vai alle Richieste
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Create new user section */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
@@ -180,7 +209,7 @@ function UsersManagement() {
                                                     onClick={() => setRoleMenuOpen(roleMenuOpen === user.id ? null : user.id)}
                                                     className="bg-iov-pink/20 text-iov-pink-text hover:bg-iov-pink/40 transition px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium whitespace-nowrap"
                                                 >
-                                                    Change Role
+                                                    Cambia Ruolo
                                                 </button>
                                                 {roleMenuOpen === user.id && (
                                                     <div className="absolute top-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg z-10">
@@ -204,7 +233,7 @@ function UsersManagement() {
                                                 className="bg-iov-yellow/20 text-iov-yellow-text hover:bg-iov-yellow/40 transition px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium whitespace-nowrap"
                                             >
                                                 <Edit2 className="w-4 h-4" />
-                                                Change Info
+                                                Cambia Info
                                             </button>
                                             <button
                                                 onClick={() => handleToggleDisable(user.id)}

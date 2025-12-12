@@ -10,6 +10,14 @@ function Header({ title }: HeaderProps) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
+    const handleLogoClick = () => {
+        if (user) {
+            navigate(`/${user.role}/home`);
+        } else {
+            navigate('/');
+        }
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/');
@@ -34,7 +42,12 @@ function Header({ title }: HeaderProps) {
                 <div className="flex items-center justify-between">
                     {/* Logo and title */}
                     <div className="flex items-center gap-4">
-                        <img src="/logo.svg" alt="IOV logo" className="w-20.5 h-10 rounded-md" />
+                        <button
+                            onClick={handleLogoClick}
+                            className="hover:opacity-80 transition-opacity cursor-pointer p-0 bg-transparent border-none"
+                        >
+                            <img src="/logo.svg" alt="IOV logo" className="w-20.5 h-10 rounded-md" />
+                        </button>
                         <div className="text-2xl font-bold">IOV</div>
                         {title && (
                             <>

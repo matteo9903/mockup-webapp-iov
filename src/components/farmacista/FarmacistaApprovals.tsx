@@ -74,7 +74,7 @@ function FarmacistaApprovals() {
                                     className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:bg-iov-dark-blue-hover transition-colors flex items-center gap-2 whitespace-nowrap"
                                 >
                                     <Eye className="w-4 h-4" />
-                                    View
+                                    Visualizza
                                 </button>
                             </div>
                         </div>

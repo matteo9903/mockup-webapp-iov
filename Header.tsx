@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext.tsx';
+import { useAuth } from './src/context/AuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
@@ -9,6 +9,14 @@ interface HeaderProps {
 function Header({ title }: HeaderProps) {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+
+    const handleLogoClick = () => {
+        if (user) {
+            navigate(`/${user.role}/home`);
+        } else {
+            navigate('/');
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -34,7 +42,12 @@ function Header({ title }: HeaderProps) {
                 <div className="flex items-center justify-between">
                     {/* Logo and title */}
                     <div className="flex items-center gap-4">
-                        <img src="/logo.svg" alt="IOV logo" className="w-8 h-8 rounded-md" />
+                        <button
+                            onClick={handleLogoClick}
+                            className="hover:opacity-80 transition-opacity cursor-pointer p-0 bg-transparent border-none"
+                        >
+                            <img src="/logo.svg" alt="IOV logo" className="w-8 h-8 rounded-md" />
+                        </button>
                         <div className="text-2xl font-bold">IOV</div>
                         {title && (
                             <>
