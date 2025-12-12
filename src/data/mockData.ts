@@ -6,7 +6,7 @@ import {
     Questionnaire,
     Notification,
     Drug,
-} from '../types';
+} from '../types/index';
 
 // Helper function to create dates
 const daysAgo = (days: number): Date => {
@@ -468,5 +468,58 @@ export const mockNotifications: Notification[] = [
         urgency: 'medium',
         date: daysAgo(1),
         isRead: false,
+    },
+];
+
+// --- Admin / Associations / Users / Export mock data ---
+
+// Clinicians (users with role 'clinico')
+export const mockClinicians = [
+    { id: 'c1', username: 'drossi', role: 'clinico', name: 'Davide', surname: 'Rossi' },
+    { id: 'c2', username: 'lsantini', role: 'clinico', name: 'Luca', surname: 'Santini' },
+    { id: 'c3', username: 'mconti', role: 'clinico', name: 'Maria', surname: 'Conti' },
+] as const;
+
+// Associations: clinician id -> patient ids
+export const mockAssociations: { clinicianId: string; patientIds: string[] }[] = [
+    { clinicianId: 'c1', patientIds: ['p1', 'p4', 'p7'] },
+    { clinicianId: 'c2', patientIds: ['p2', 'p5', 'p8'] },
+    { clinicianId: 'c3', patientIds: ['p3', 'p6', 'p9', 'p10'] },
+];
+
+// Users relevant for admin user-management
+export const mockAdminUsers = [
+    { id: 'u1', username: 'admin', role: 'admin', name: 'Amministratore', surname: 'Sistema' },
+    { id: 'u2', username: 'fpalumbo', role: 'farmacista', name: 'Francesco', surname: 'Palumbo' },
+    { id: 'c1', username: 'drossi', role: 'clinico', name: 'Davide', surname: 'Rossi' },
+    { id: 'c2', username: 'lsantini', role: 'clinico', name: 'Luca', surname: 'Santini' },
+    { id: 'c3', username: 'mconti', role: 'clinico', name: 'Maria', surname: 'Conti' },
+];
+
+// Mock export jobs / presets available in the Admin Export panel
+export const mockExportJobs = [
+    {
+        id: 'e1',
+        name: 'Export pazienti - ultimo mese',
+        createdAt: daysAgo(2),
+        format: 'CSV',
+        status: 'ready',
+        requestedBy: 'Amministratore Sistema',
+    },
+    {
+        id: 'e2',
+        name: 'Report terapie attive',
+        createdAt: daysAgo(7),
+        format: 'JSON',
+        status: 'processing',
+        requestedBy: 'Davide Rossi',
+    },
+    {
+        id: 'e3',
+        name: 'Dati aggregati PDTA',
+        createdAt: daysAgo(30),
+        format: 'PDF',
+        status: 'failed',
+        requestedBy: 'Amministratore Sistema',
     },
 ];

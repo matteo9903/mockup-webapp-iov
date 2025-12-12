@@ -34,7 +34,7 @@ function Header({ title }: HeaderProps) {
                 <div className="flex items-center justify-between">
                     {/* Logo and title */}
                     <div className="flex items-center gap-4">
-                        <img src="/logo.svg" alt="IOV logo" className="w-20.5 h-10 rounded-md" />
+                        <img src="/logo.svg" alt="IOV logo" className="w-8 h-8 rounded-md" />
                         <div className="text-2xl font-bold">IOV</div>
                         {title && (
                             <>

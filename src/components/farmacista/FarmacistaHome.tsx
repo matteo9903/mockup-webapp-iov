@@ -63,7 +63,7 @@ function FarmacistaHome() {
             color: 'bg-iov-pink',
             textColor: 'text-iov-pink-text',
             borderColor: 'border-iov-pink-border',
-            onClick: () => navigate('/farmacista/patients'),
+            onClick: () => navigate('/farmacista/approvals'),
             badge: pendingApprovals > 0 ? pendingApprovals : undefined,
         },
     ];
