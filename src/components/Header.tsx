@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react';
-import { useAuth } from './src/context/AuthContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
