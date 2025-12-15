@@ -10,7 +10,7 @@ function FarmacistaApprovals() {
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">Approvazioni Farmacista</h1>
+                <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">Approvazioni</h1>
                 <p className="text-iov-gray-text">Visualizza le richieste di onboarding pazienti</p>
             </div>
 

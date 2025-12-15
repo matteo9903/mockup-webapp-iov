@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Filter, User } from 'lucide-react';
 import { mockPatients } from '../../data/mockData.ts';
 import { PDTA, SedeIOV } from '../../types/index.ts';
-import StatusBadge from '../common/StatusBadge.tsx';
+import StatusBadge from './StatusBadge.tsx';
 
 function PatientList() {
     const navigate = useNavigate();
@@ -92,51 +92,46 @@ function PatientList() {
                 {filteredPatients.length} pazient{filteredPatients.length === 1 ? 'e' : 'i'} trovat{filteredPatients.length === 1 ? 'o' : 'i'}
             </div>
 
-            {/* Patient cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPatients.map((patient) => (
-                    <button
-                        key={patient.id}
-                        onClick={() => navigate(`/farmacista/patient/${patient.id}`)}
-                        className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 p-6 text-left group hover:-translate-y-1 border-2 border-transparent hover:border-iov-light-blue"
-                    >
-                        {/* Patient icon */}
-                        <div className="bg-iov-light-blue w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                            <User className="w-8 h-8 text-iov-dark-blue-text" />
-                        </div>
-
-                        {/* Patient info */}
-                        <h3 className="text-xl font-bold text-iov-dark-blue mb-2">
-                            {patient.name} {patient.surname}
-                        </h3>
-
-                        <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-iov-gray-text">PDTA:</span>
-                                <span className="text-sm bg-iov-pink px-3 py-1 rounded-full text-iov-pink-text font-medium capitalize">
-                                    {patient.pdta}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-iov-gray-text">Sede:</span>
-                                <span className="text-sm bg-iov-yellow px-3 py-1 rounded-full text-iov-yellow-text font-medium">
-                                    {patient.sedeIOV}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Status */}
-                        {patient.idCard && patient.therapyPlan && (
-                            <StatusBadge status={patient.idCard.approvalStatus} size="sm" />
-                        )}
-                        {!patient.idCard && (
-                            <span className="text-sm text-gray-500 italic">Onboarding non completato</span>
-                        )}
-                    </button>
-                ))}
-            </div>
-
-            {filteredPatients.length === 0 && (
+            {/* Patient list as table */}
+            {filteredPatients.length > 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white rounded-xl shadow-md">
+                        <thead>
+                            <tr>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">Nome</th>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">Cognome</th>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">PDTA</th>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">Sede</th>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">Stato</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredPatients.map((patient) => (
+                                <tr
+                                    key={patient.id}
+                                    className="hover:bg-iov-light-blue/20 cursor-pointer transition"
+                                    onClick={() => navigate(`/farmacista/patient/${patient.id}`)}
+                                >
+                                    <td className="px-4 py-2 font-medium flex items-center gap-2">
+                                        <User className="w-5 h-5 text-iov-dark-blue-text" />
+                                        {patient.name}
+                                    </td>
+                                    <td className="px-4 py-2">{patient.surname}</td>
+                                    <td className="px-4 py-2 capitalize">{patient.pdta}</td>
+                                    <td className="px-4 py-2">{patient.sedeIOV}</td>
+                                    <td className="px-4 py-2">
+                                        {patient.idCard && patient.therapyPlan ? (
+                                            <StatusBadge status={patient.idCard.approvalStatus} size="sm" />
+                                        ) : (
+                                            <span className="text-sm text-gray-500 italic">Onboarding non completato</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
                 <div className="text-center py-12">
                     <p className="text-iov-gray-text text-lg">Nessun paziente trovato</p>
                 </div>

@@ -6,6 +6,11 @@ import { useNavigate } from 'react-router-dom';
 function UsersManagement() {
     const navigate = useNavigate();
     const [users, setUsers] = useState(mockAdminUsers);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
+        const handleDeleteUser = (userId: string) => {
+            setUsers(users.filter((u) => u.id !== userId));
+            setUserToDelete(null);
+        };
     const [disabledUsers, setDisabledUsers] = useState<string[]>([]);
     const [showNewUserForm, setShowNewUserForm] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', name: '', surname: '', role: 'clinico' as 'clinico' | 'farmacista' });
@@ -233,7 +238,7 @@ function UsersManagement() {
                                                 className="bg-iov-yellow/20 text-iov-yellow-text hover:bg-iov-yellow/40 transition px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium whitespace-nowrap"
                                             >
                                                 <Edit2 className="w-4 h-4" />
-                                                Cambia Info
+                                                Modifica
                                             </button>
                                             <button
                                                 onClick={() => handleToggleDisable(user.id)}
@@ -246,6 +251,12 @@ function UsersManagement() {
                                                 <Lock className="w-4 h-4" />
                                                 {disabledUsers.includes(user.id) ? 'Abilita' : 'Disabilita'}
                                             </button>
+                                            <button
+                                                onClick={() => setUserToDelete(user.id)}
+                                                className="bg-red-600 text-white px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium hover:bg-red-700 transition whitespace-nowrap"
+                                            >
+                                                Elimina
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -254,6 +265,30 @@ function UsersManagement() {
                     </table>
                 </div>
             </div>
+
+            {/* Delete confirmation modal */}
+            {userToDelete && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                    <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full">
+                        <h2 className="text-lg font-bold text-iov-dark-blue mb-4">Conferma eliminazione</h2>
+                        <p className="mb-6">Sei sicuro di voler eliminare questo utente? L'operazione non può essere annullata.</p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setUserToDelete(null)}
+                                className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(userToDelete)}
+                                className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition"
+                            >
+                                Elimina
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

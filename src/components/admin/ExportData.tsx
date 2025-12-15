@@ -13,17 +13,10 @@ function ExportData() {
             name: `Export ${dataType} - ${new Date().toLocaleDateString()}`,
             createdAt: new Date(),
             format: format,
-            status: 'processing' as const,
+            status: 'ready' as const,
             requestedBy: 'Amministratore',
         };
         setExportJobs([newJob, ...exportJobs]);
-        setTimeout(() => {
-            setExportJobs((prev) =>
-                prev.map((job) =>
-                    job.id === newJob.id ? { ...job, status: 'ready' as const } : job
-                )
-            );
-        }, 2000);
     };
 
     const handleDownload = (jobId: string) => {
@@ -35,8 +28,6 @@ function ExportData() {
         switch (status) {
             case 'ready':
                 return 'text-green-600';
-            case 'processing':
-                return 'text-blue-600';
             case 'failed':
                 return 'text-red-600';
             default:
@@ -48,8 +39,6 @@ function ExportData() {
         switch (status) {
             case 'ready':
                 return <CheckCircle className="w-5 h-5" />;
-            case 'processing':
-                return <RefreshCw className="w-5 h-5 animate-spin" />;
             case 'failed':
                 return <AlertCircle className="w-5 h-5" />;
             default:
@@ -121,41 +110,41 @@ function ExportData() {
                         </thead>
                         <tbody className="divide-y">
                             {exportJobs.map((job) => (
-                                <tr key={job.id}>
-                                    <td className="px-6 py-4 font-medium text-iov-dark-blue">{job.name}</td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-iov-pink/20 text-iov-pink-text">
-                                            {job.format}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className={`flex items-center gap-2 ${getStatusColor(job.status)}`}>
-                                            {getStatusIcon(job.status)}
-                                            <span className="capitalize">{job.status}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-700">{job.requestedBy}</td>
-                                    <td className="px-6 py-4 text-sm text-iov-gray-text">
-                                        {job.createdAt instanceof Date
-                                            ? job.createdAt.toLocaleDateString('it-IT')
-                                            : new Date(job.createdAt).toLocaleDateString('it-IT')}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <button
-                                            onClick={() => handleDownload(job.id)}
-                                            disabled={job.status !== 'ready'}
-                                            className={`px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition ${
-                                                job.status === 'ready'
-                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            }`}
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Download
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                    <tr key={job.id}>
+                                        <td className="px-6 py-4 font-medium text-iov-dark-blue">{job.name}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-iov-pink/20 text-iov-pink-text">
+                                                {job.format}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`flex items-center gap-2 ${getStatusColor(job.status)}`}>
+                                                {getStatusIcon(job.status)}
+                                                <span className="capitalize">{job.status}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-700">{job.requestedBy}</td>
+                                        <td className="px-6 py-4 text-sm text-iov-gray-text">
+                                            {job.createdAt instanceof Date
+                                                ? job.createdAt.toLocaleDateString('it-IT')
+                                                : new Date(job.createdAt).toLocaleDateString('it-IT')}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => handleDownload(job.id)}
+                                                disabled={job.status !== 'ready'}
+                                                className={`px-3 py-1 rounded-lg flex items-center gap-1 text-xs font-medium transition ${
+                                                    job.status === 'ready'
+                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                }`}
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                Download
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>

@@ -63,27 +63,28 @@ function PatientOnboarding() {
 
             {/* Progress steps */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                <div className="flex items-center justify-between">
-                    {[1, 2, 3].map((step) => (
-                        <div key={step} className="flex items-center flex-1">
-                            <div
-                                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= step ? 'bg-iov-dark-blue text-white' : 'bg-gray-200 text-gray-500'
-                                    }`}
-                            >
-                                {currentStep > step ? <Check className="w-6 h-6" /> : step}
-                            </div>
-                            {step < 3 && (
-                                <div className={`flex-1 h-1 mx-2 ${currentStep > step ? 'bg-iov-dark-blue' : 'bg-gray-200'}`}></div>
-                            )}
+                <div className="flex flex-col">
+                    <div className="flex items-center w-full">
+                        {/* Step 1 */}
+                        <div className="flex flex-col items-center flex-1 min-w-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= 1 ? 'bg-iov-dark-blue text-white' : 'bg-gray-200 text-gray-500'}`}>{currentStep > 1 ? <Check className="w-6 h-6" /> : 1}</div>
+                            <span className={`mt-2 text-sm font-medium text-center ${currentStep >= 1 ? 'text-iov-dark-blue' : 'text-gray-500'}`}>Carta d'Identità</span>
                         </div>
-                    ))}
-                </div>
-                <div className="flex justify-between mt-2 text-sm">
-                    <span className={currentStep >= 1 ? 'text-iov-dark-blue font-medium' : 'text-gray-500'}>
-                        Carta d'Identità
-                    </span>
-                    <span className={currentStep >= 2 ? 'text-iov-dark-blue font-medium' : 'text-gray-500'}>Piano Terapeutico</span>
-                    <span className={currentStep >= 3 ? 'text-iov-dark-blue font-medium' : 'text-gray-500'}>Revisione</span>
+                        {/* Line 1-2 */}
+                        <div className={`flex-1 h-1 ${currentStep > 1 ? 'bg-iov-dark-blue' : 'bg-gray-200'}`}></div>
+                        {/* Step 2 */}
+                        <div className="flex flex-col items-center flex-1 min-w-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= 2 ? 'bg-iov-dark-blue text-white' : 'bg-gray-200 text-gray-500'}`}>{currentStep > 2 ? <Check className="w-6 h-6" /> : 2}</div>
+                            <span className={`mt-2 text-sm font-medium text-center ${currentStep >= 2 ? 'text-iov-dark-blue' : 'text-gray-500'}`}>Piano Terapeutico</span>
+                        </div>
+                        {/* Line 2-3 */}
+                        <div className={`flex-1 h-1 ${currentStep > 2 ? 'bg-iov-dark-blue' : 'bg-gray-200'}`}></div>
+                        {/* Step 3 */}
+                        <div className="flex flex-col items-center flex-1 min-w-0">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${currentStep >= 3 ? 'bg-iov-dark-blue text-white' : 'bg-gray-200 text-gray-500'}`}>{3}</div>
+                            <span className={`mt-2 text-sm font-medium text-center ${currentStep >= 3 ? 'text-iov-dark-blue' : 'text-gray-500'}`}>Revisione</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

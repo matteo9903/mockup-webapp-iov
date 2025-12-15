@@ -76,7 +76,7 @@ function ClinicoHome() {
                 <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-8">
                     <div className="flex items-center gap-3">
                         <AlertCircle className="w-8 h-8 text-yellow-600 flex-shrink-0" />
-                        <div>
+                        <div className="flex-1">
                             <h3 className="text-lg font-bold text-yellow-900 mb-1">
                                 Attenzione: Richieste in Attesa
                             </h3>
@@ -85,6 +85,12 @@ function ClinicoHome() {
                                 richieste per permettere l'inizio delle terapie.
                             </p>
                         </div>
+                        <button
+                            onClick={() => navigate('/clinico/approvals')}
+                            className="bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-yellow-700 transition-colors whitespace-nowrap"
+                        >
+                            Vai alle Richieste
+                        </button>
                     </div>
                 </div>
             )}

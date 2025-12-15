@@ -4,7 +4,7 @@ import Navbar from '../common/Navbar.tsx';
 import { Home, Users, CheckSquare, FileText, Bell, Database } from 'lucide-react';
 import ClinicoHome from './ClinicoHome.tsx';
 import ApprovalsQueue from './ApprovalsQueue.tsx';
-import PatientList from '../farmacista/PatientList.tsx'; // Reuse same component
+import PatientList from '../common/PatientList.tsx'; // Reuse same component
 import PatientDetail from '../farmacista/PatientDetail.tsx'; // Reuse same component
 import QuestionnaireList from '../common/QuestionnaireList.tsx';
 import NotificationsList from '../common/NotificationsList.tsx';

@@ -5,6 +5,7 @@ import { mockClinicians, mockAssociations, mockPatients } from '../../data/mockD
 function Associations() {
     const [associations, setAssociations] = useState(mockAssociations);
     const [moveMenuOpen, setMoveMenuOpen] = useState<{ patientId: string; fromClinicianId: string } | null>(null);
+    const [pendingDelete, setPendingDelete] = useState<{ clinicianId: string; patientId: string } | null>(null);
 
     const handleRemoveAssociation = (clinicianId: string, patientId: string) => {
         setAssociations(
@@ -14,6 +15,7 @@ function Associations() {
                     : assoc
             )
         );
+        setPendingDelete(null);
     };
 
     const handleMovePatient = (patientId: string, fromClinicianId: string, toClinicianId: string) => {
@@ -108,7 +110,7 @@ function Associations() {
                                                         )}
                                                     </div>
                                                     <button
-                                                        onClick={() => handleRemoveAssociation(assoc.clinicianId, patientId)}
+                                                        onClick={() => setPendingDelete({ clinicianId: assoc.clinicianId, patientId })}
                                                         className="text-red-500 hover:text-red-700 transition p-1"
                                                     >
                                                         <Trash2 className="w-5 h-5" />
@@ -123,6 +125,29 @@ function Associations() {
                     );
                 })}
             </div>
+            {/* Delete confirmation modal (moved outside loop, styled like UsersManagement) */}
+            {pendingDelete && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+                    <div className="bg-white rounded-xl shadow-lg p-8 max-w-sm w-full">
+                        <h2 className="text-lg font-bold text-iov-dark-blue mb-4">Conferma eliminazione</h2>
+                        <p className="mb-6">Sei sicuro di voler rimuovere questo paziente dall'associazione? L'operazione non può essere annullata.</p>
+                        <div className="flex justify-end gap-2">
+                            <button
+                                onClick={() => setPendingDelete(null)}
+                                className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                onClick={() => handleRemoveAssociation(pendingDelete.clinicianId, pendingDelete.patientId)}
+                                className="bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition"
+                            >
+                                Elimina
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

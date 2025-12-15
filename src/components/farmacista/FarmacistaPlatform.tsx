@@ -4,7 +4,7 @@ import Navbar from '../common/Navbar.tsx';
 import { Home, Users, UserPlus, FileText, Bell, Database, Activity } from 'lucide-react';
 import FarmacistaHome from './FarmacistaHome.tsx';
 import PatientOnboarding from './PatientOnboarding.tsx';
-import PatientList from './PatientList.tsx';
+import PatientList from '../common/PatientList.tsx';
 import PatientDetail from './PatientDetail.tsx';
 import FarmacistaApprovals from './FarmacistaApprovals.tsx';
 import QuestionnaireList from '../common/QuestionnaireList.tsx';
