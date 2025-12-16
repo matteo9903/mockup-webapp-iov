@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FileText, Calendar, ToggleLeft, ToggleRight, Edit2 } from 'lucide-react';
 import { mockQuestionnaires } from '../../data/mockData.ts';
 import Modal from './Modal.tsx';
+import LoadTemplate from './LoadTemplate';
 
 interface QuestionnaireListProps {
     patientId?: string;
@@ -11,6 +12,14 @@ interface QuestionnaireListProps {
 function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [frequency, setFrequency] = useState('');
+
+    // State for template modal
+    const [templateModal, setTemplateModal] = useState<{
+        isOpen: boolean;
+        templateUrl: string;
+        title?: string;
+        questionnaireId?: string;
+    }>({ isOpen: false, templateUrl: '', title: '', questionnaireId: '' });
 
     const questionnaires = showAll
         ? mockQuestionnaires
@@ -85,7 +94,10 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
                                 </div>
                             </div>
 
-                            <button className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
+                            <button
+                                className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                onClick={() => setTemplateModal({ isOpen: true, templateUrl: questionnaire.templateUrl || '', title: questionnaire.title, questionnaireId: questionnaire.id })}
+                            >
                                 Visualizza Template
                             </button>
                         </div>
@@ -121,6 +133,16 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
                     </button>
                 </div>
             </Modal>
+
+            {/* Load Template Modal */}
+            <LoadTemplate
+                isOpen={templateModal.isOpen}
+                onClose={() => setTemplateModal({ ...templateModal, isOpen: false })}
+                templateUrl={templateModal.templateUrl}
+                title={templateModal.title}
+                questionnaireId={templateModal.questionnaireId}
+                isActive={mockQuestionnaires.find(q => q.id === templateModal.questionnaireId)?.isActive}
+            />
         </div>
     );
 }

@@ -530,3 +530,92 @@ export const mockExportJobs = [
         requestedBy: 'Amministratore Sistema',
     },
 ];
+
+
+// Mocked questions about cancer/medicine therapy satisfaction
+export const mockSatisfactionQuestions = [
+    {
+        id: 'qst1',
+        text: 'Quanto sei soddisfatto dell’efficacia della terapia che stai seguendo?',
+    },
+    {
+        id: 'qst2',
+        text: 'Hai riscontrato effetti collaterali che ti preoccupano durante la terapia?',
+    },
+    {
+        id: 'qst3',
+        text: 'Quanto ti senti supportato dal personale medico durante il trattamento?',
+    },
+    {
+        id: 'qst4',
+        text: 'La terapia ha migliorato la tua qualità di vita?',
+    },
+    {
+        id: 'qst5',
+        text: 'Hai avuto difficoltà a seguire le indicazioni terapeutiche?',
+    },
+    {
+        id: 'qst6',
+        text: 'Quanto ritieni chiara la comunicazione sulle modalità di assunzione dei farmaci?',
+    },
+    {
+        id: 'qst7',
+        text: 'Hai avuto problemi a reperire i farmaci prescritti?',
+    },
+    {
+        id: 'qst8',
+        text: 'Quanto sei soddisfatto del supporto psicologico ricevuto durante la terapia?',
+    },
+    {
+        id: 'qst9',
+        text: 'Ritieni che la terapia abbia risposto alle tue aspettative?',
+    },
+    {
+        id: 'qst10',
+        text: 'Consiglieresti il percorso terapeutico che stai seguendo ad altri pazienti?',
+    },
+];
+
+// Mocked questions about pain during therapy
+export const mockPainQuestions = [
+    {
+        id: 'qpain1',
+        text: 'Hai provato dolore durante il corso della terapia?',
+    },
+    {
+        id: 'qpain2',
+        text: 'Su una scala da 1 a 10, quanto intenso è il dolore che provi attualmente?',
+    },
+    {
+        id: 'qpain3',
+        text: 'Il dolore interferisce con le tue attività quotidiane?',
+    },
+    {
+        id: 'qpain4',
+        text: 'Hai riscontrato un cambiamento nel livello di dolore durante la terapia?',
+    },
+    {
+        id: 'qpain5',
+        text: 'I farmaci antidolorifici prescritti sono efficaci nel controllare il tuo dolore?',
+    },
+    {
+        id: 'qpain6',
+        text: 'In quali momenti della giornata il dolore è più intenso?',
+    },
+    {
+        id: 'qpain7',
+        text: 'Hai sviluppato effetti collaterali dai farmaci antidolorifici?',
+    },
+    {
+        id: 'qpain8',
+        text: 'Quanto sei soddisfatto della gestione del dolore da parte dell\' equipe medica?',
+    },
+    {
+        id: 'qpain9',
+        text: 'Il dolore ha influenzato la tua qualità del sonno?',
+    },
+    {
+        id: 'qpain10',
+        text: 'Vorresti apportare modifiche al tuo piano di gestione del dolore?',
+    },
+];
