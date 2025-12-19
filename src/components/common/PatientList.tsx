@@ -2,23 +2,23 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, User } from 'lucide-react';
 import { mockPatients } from '../../data/mockData.ts';
-import { PDTA, SedeIOV } from '../../types/index.ts';
 import StatusBadge from './StatusBadge.tsx';
 
 function PatientList() {
     const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedPDTA, setSelectedPDTA] = useState<PDTA | 'all'>('all');
-    const [selectedSede, setSelectedSede] = useState<SedeIOV | 'all'>('all');
+    const [selectedUnitaOperativa, setSelectedUnitaOperativa] = useState<string | 'all'>('all');
 
     const filteredPatients = mockPatients.filter((patient) => {
         const matchesSearch =
             patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             patient.surname.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesPDTA = selectedPDTA === 'all' || patient.pdta === selectedPDTA;
-        const matchesSede = selectedSede === 'all' || patient.sedeIOV === selectedSede;
-        return matchesSearch && matchesPDTA && matchesSede;
+        const matchesUnitaOperativa = selectedUnitaOperativa === 'all' || patient.unitaOperativa === selectedUnitaOperativa;
+        return matchesSearch && matchesUnitaOperativa;
     });
+
+    // Get unique unità operative for dropdown
+    const unitaOperativeList = Array.from(new Set(mockPatients.map(p => p.unitaOperativa))).sort();
 
     return (
         <div>
@@ -34,7 +34,7 @@ function PatientList() {
                     <h2 className="text-lg font-semibold text-iov-dark-blue">Filtri</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Search */}
                     <div>
                         <label className="block text-sm font-medium text-iov-gray-text mb-2">
@@ -52,36 +52,22 @@ function PatientList() {
                         </div>
                     </div>
 
-                    {/* PDTA Filter */}
+                    {/* Unità Operativa Filter */}
                     <div>
                         <label className="block text-sm font-medium text-iov-gray-text mb-2">
-                            PDTA
+                            Unità Operativa
                         </label>
                         <select
-                            value={selectedPDTA}
-                            onChange={(e) => setSelectedPDTA(e.target.value as PDTA | 'all')}
-                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                        >
-                            <option value="all">Tutti</option>
-                            <option value="mammella">Mammella</option>
-                            <option value="urologico">Urologico</option>
-                            <option value="gastroenterico">Gastroenterico</option>
-                        </select>
-                    </div>
-
-                    {/* Sede Filter */}
-                    <div>
-                        <label className="block text-sm font-medium text-iov-gray-text mb-2">
-                            Sede IOV
-                        </label>
-                        <select
-                            value={selectedSede}
-                            onChange={(e) => setSelectedSede(e.target.value as SedeIOV | 'all')}
+                            value={selectedUnitaOperativa}
+                            onChange={(e) => setSelectedUnitaOperativa(e.target.value)}
                             className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
                         >
                             <option value="all">Tutte</option>
-                            <option value="Padova">Padova</option>
-                            <option value="Castelfranco Veneto">Castelfranco Veneto</option>
+                            {unitaOperativeList.map((unitaOperativa) => (
+                                <option key={unitaOperativa} value={unitaOperativa}>
+                                    {unitaOperativa}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -100,9 +86,7 @@ function PatientList() {
                             <tr>
                                 <th className="px-4 py-2 text-left text-iov-dark-blue">Nome</th>
                                 <th className="px-4 py-2 text-left text-iov-dark-blue">Cognome</th>
-                                <th className="px-4 py-2 text-left text-iov-dark-blue">PDTA</th>
-                                <th className="px-4 py-2 text-left text-iov-dark-blue">Sede</th>
-                                <th className="px-4 py-2 text-left text-iov-dark-blue">Stato</th>
+                                <th className="px-4 py-2 text-left text-iov-dark-blue">Unità Operativa</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -117,15 +101,7 @@ function PatientList() {
                                         {patient.name}
                                     </td>
                                     <td className="px-4 py-2">{patient.surname}</td>
-                                    <td className="px-4 py-2 capitalize">{patient.pdta}</td>
-                                    <td className="px-4 py-2">{patient.sedeIOV}</td>
-                                    <td className="px-4 py-2">
-                                        {patient.idCard && patient.therapyPlan ? (
-                                            <StatusBadge status={patient.idCard.approvalStatus} size="sm" />
-                                        ) : (
-                                            <span className="text-sm text-gray-500 italic">Onboarding non completato</span>
-                                        )}
-                                    </td>
+                                    <td className="px-4 py-2">{patient.unitaOperativa}</td>
                                 </tr>
                             ))}
                         </tbody>

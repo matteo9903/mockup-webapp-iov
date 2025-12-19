@@ -15,9 +15,10 @@ interface LoadTemplateProps {
   title?: string;
   questionnaireId?: string;
   isActive?: boolean;
+  readonly?: boolean;
 }
 
-const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUrl, title, questionnaireId, isActive: initialIsActive = true }) => {
+const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUrl, title, questionnaireId, isActive: initialIsActive = true, readonly = true }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
@@ -129,9 +130,11 @@ const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUr
                     setIsEditMode(true);
                   }
                 }}
-                disabled={isEditMode && !hasChanges}
+                disabled={readonly || (isEditMode && !hasChanges)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isEditMode
+                  readonly
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : isEditMode
                     ? `text-white ${hasChanges ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-300 cursor-not-allowed'}`
                     : 'bg-iov-dark-blue text-white hover:bg-iov-dark-blue-hover'
                 }`}
@@ -242,7 +245,9 @@ const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUr
               className="w-full h-[50vh] border-2 border-gray-200 rounded-lg"
             />
             <div className="mt-4 text-sm text-iov-gray-text text-center">
-              Se il template non viene visualizzato, <a href={templateUrl} target="_blank" rel="noopener noreferrer" className="text-iov-dark-blue underline">clicca qui per scaricare il PDF</a>.
+              {`Se il template non viene visualizzato, `}
+              <a href={templateUrl} target="_blank" rel="noopener noreferrer" className="text-iov-dark-blue underline">clicca qui per scaricare il PDF</a>
+              {`.`}
             </div>
           </div>
         )}

@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { UserPlus, Users, FileText, Bell, Database, Activity } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.tsx';
 import { mockPatients, mockNotifications, mockPendingApprovals } from '../../data/mockData.ts';
 
 function FarmacistaHome() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const doctorName = user?.name || user?.username || 'Utente';
 
     const unreadNotifications = mockNotifications.filter(n => !n.isRead).length;
     const totalPatients = mockPatients.length;
@@ -56,28 +59,34 @@ function FarmacistaHome() {
             borderColor: 'border-iov-light-blue-dark',
             onClick: () => navigate('/farmacista/database'),
         },
-        {
-            title: 'Richieste in Approvazione',
-            description: `${pendingApprovals} in attesa`,
-            icon: Activity,
-            color: 'bg-iov-pink',
-            textColor: 'text-iov-pink-text',
-            borderColor: 'border-iov-pink-border',
-            onClick: () => navigate('/farmacista/approvals'),
-            badge: pendingApprovals > 0 ? pendingApprovals : undefined,
-        },
     ];
 
     return (
         <div>
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">
-                    Benvenuto, Farmacista
+                    Benvenuto, Dr. {doctorName}
                 </h1>
                 <p className="text-iov-gray-text">
                     Gestisci i pazienti e le terapie oncologiche
                 </p>
             </div>
+
+            {/* Notifications alert */}
+            {unreadNotifications > 0 && (
+                <div className="mb-8 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-center gap-4 cursor-pointer hover:bg-blue-100 transition-colors duration-300" onClick={() => navigate('/farmacista/notifications')}>
+                    <div className="relative">
+                        <Bell className="w-8 h-8 text-blue-600" />
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                            {unreadNotifications}
+                        </div>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-iov-dark-blue">{unreadNotifications} {unreadNotifications > 1 ? 'notifiche' : 'notifica'} non lett{unreadNotifications > 1 ? 'e' : 'a'}</p>
+                        <p className="text-sm text-iov-gray-text">Clicca per visualizzare</p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {quickActions.map((action) => {

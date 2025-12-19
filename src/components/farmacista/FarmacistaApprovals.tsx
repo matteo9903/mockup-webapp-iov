@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle, Eye, Calendar } from 'lucide-react';
 import { mockPendingApprovals } from '../../data/mockData.ts';
 import { PendingApproval } from '../../types/index.ts';
+import { formatDrugDosage, formatDrugSchedule } from '../../utils/drugFormat.ts';
 import Modal from '../common/Modal.tsx';
 
 function FarmacistaApprovals() {
@@ -148,9 +149,12 @@ function FarmacistaApprovals() {
                                     <strong className="block mb-2">Farmaci Prescritti:</strong>
                                     <div className="space-y-2">
                                         {selectedApproval.therapyPlan.drugs.map((drug, index) => (
-                                            <div key={drug.id} className="bg-white p-3 rounded-lg text-sm">
-                                                <strong>Farmaco {index + 1}:</strong> {drug.activePrinciple} - {drug.dosage} alle ore{' '}
-                                                {drug.hourOfAssumption}
+                                            <div key={drug.id} className="bg-white p-3 rounded-lg text-sm space-y-1">
+                                                <div>
+                                                    <strong>Farmaco {index + 1}:</strong> {drug.activePrinciple}
+                                                </div>
+                                                <div className="text-xs text-gray-600">{formatDrugDosage(drug)}</div>
+                                                <div className="text-xs text-gray-600">{formatDrugSchedule(drug)}</div>
                                             </div>
                                         ))}
                                     </div>

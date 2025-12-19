@@ -59,6 +59,10 @@ function Associations() {
                             <h3 className="text-lg font-bold text-iov-dark-blue mb-4">
                                 {clinician?.name} {clinician?.surname} ({clinician?.username})
                             </h3>
+                            <p className="text-sm text-iov-gray-text mb-4">
+                                Sede: <span className="font-semibold text-iov-dark-blue">{clinician?.sedeIOV ?? '—'}</span> · PDTA:{' '}
+                                <span className="font-semibold text-iov-dark-blue">{clinician?.pdta ?? '—'}</span>
+                            </p>
                             {assoc.patientIds.length === 0 ? (
                                 <p className="text-iov-gray-text text-sm">Nessun paziente associato</p>
                             ) : (
@@ -71,7 +75,9 @@ function Associations() {
                                                     <p className="font-medium text-iov-dark-blue">
                                                         {patient?.name} {patient?.surname}
                                                     </p>
-                                                    <p className="text-xs text-iov-gray-text">PDTA: {patient?.pdta} | Sede: {patient?.sedeIOV}</p>
+                                                    <p className="text-xs text-iov-gray-text">
+                                                        Unità operativa: {patient?.unitaOperativa ?? '—'}
+                                                    </p>
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <div className="relative">

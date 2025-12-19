@@ -1,9 +1,140 @@
-import { useState } from 'react';
+import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Check, Plus, Trash2 } from 'lucide-react';
-import { SedeIOV, PatientAnagraphics, CaregiverContacts, Drug } from '../../types/index.ts';
+import { ArrowRight, ArrowLeft, Check, Plus } from 'lucide-react';
+import { SedeIOV, PatientAnagraphics, CaregiverContacts, Drug, DrugPhase, DrugSchedule, DrugDosage, DosageUnit, DrugScheduleFrequency } from '../../types/index.ts';
+import { mockDrugs } from '../../data/mockData.ts';
+import { formatDrugDosage, formatDrugSchedule, formatDosageValue, formatScheduleValue } from '../../utils/drugFormat.ts';
 
 type Step = 1 | 2 | 3;
+const scheduleFrequencyOptions: { value: DrugScheduleFrequency; label: string }[] = [
+    { value: 'DAILY', label: 'Giornaliero' },
+    { value: 'EVERY_OTHER_DAY', label: 'Ogni altro giorno' },
+    { value: 'ODD_DAYS', label: 'Giorni dispari' },
+    { value: 'EVEN_DAYS', label: 'Giorni pari' },
+    { value: 'CUSTOM', label: 'Personalizzato' },
+    { value: 'NONE', label: 'Nessuno' },
+];
+
+const dosageUnitOptions: DosageUnit[] = ['MG', 'MG_M2', 'G', 'MG_KG'];
+
+const cloneProtocol = (protocol: Drug): Drug => JSON.parse(JSON.stringify(protocol));
+
+const formatDateLabel = (value?: string): string =>
+    value ? new Date(value).toLocaleDateString('it-IT') : '—';
+
+const getDefaultPhaseWindow = () => {
+    const today = new Date();
+    const start = today.toISOString().split('T')[0];
+    const endRef = new Date(today);
+    endRef.setDate(endRef.getDate() + 6);
+    const end = endRef.toISOString().split('T')[0];
+    return { start, end };
+};
+
+const createEmptyPhase = (drug: Drug): DrugPhase => {
+    const scheduleByDrug = drug.drugs.reduce<Record<string, DrugSchedule>>((acc, name) => {
+        acc[name] = { frequency: 'DAILY', times: [] };
+        return acc;
+    }, {});
+    const dosageByDrug = drug.drugs.reduce<Record<string, DrugDosage>>((acc, name) => {
+        acc[name] = { amount: null };
+        return acc;
+    }, {});
+
+    const { start, end } = getDefaultPhaseWindow();
+    return {
+        name: `Nuova fase ${drug.phases.length + 1}`,
+        startDate: start,
+        endDate: end,
+        scheduleByDrug,
+        dosageByDrug,
+    };
+};
+
+interface ScheduleTimesEditorProps {
+    times: string[];
+    onAdd: (time: string) => void;
+    onRemove: (index: number) => void;
+}
+
+function ScheduleTimesEditor({ times, onAdd, onRemove }: ScheduleTimesEditorProps) {
+    const [isAdding, setIsAdding] = useState(false);
+    const [newTime, setNewTime] = useState('');
+    const buttonLabel = times.length ? 'Aggiungi altro orario' : 'Aggiungi orario';
+
+    const handleSave = () => {
+        if (!newTime) {
+            return;
+        }
+        if (!times.includes(newTime)) {
+            onAdd(newTime);
+        }
+        setNewTime('');
+        setIsAdding(false);
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+                {times.length === 0 ? (
+                    <span className="text-xs text-gray-500">Nessun orario impostato</span>
+                ) : (
+                    times.map((time, idx) => (
+                        <span
+                            key={`${time}-${idx}`}
+                            className="inline-flex items-center gap-1 bg-white border border-gray-300 rounded-full px-3 py-1 text-xs text-iov-dark-blue"
+                        >
+                            {time}
+                            <button
+                                type="button"
+                                onClick={() => onRemove(idx)}
+                                className="text-red-500 hover:text-red-700"
+                                aria-label={`Rimuovi orario ${time}`}
+                            >
+                                ×
+                            </button>
+                        </span>
+                    ))
+                )}
+            </div>
+            {isAdding ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <input
+                        type="time"
+                        value={newTime}
+                        onChange={(e) => setNewTime(e.target.value)}
+                        className="px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        className="text-xs bg-iov-dark-blue text-white px-3 py-2 rounded-lg font-semibold hover:opacity-90 transition"
+                    >
+                        Salva orario
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsAdding(false);
+                            setNewTime('');
+                        }}
+                        className="text-xs bg-gray-200 text-gray-700 px-3 py-2 rounded-lg font-semibold hover:opacity-90 transition"
+                    >
+                        Annulla
+                    </button>
+                </div>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setIsAdding(true)}
+                    className="text-xs text-iov-dark-blue font-semibold hover:text-iov-dark-blue-hover"
+                >
+                    {buttonLabel}
+                </button>
+            )}
+        </div>
+    );
+}
 
 function PatientOnboarding() {
     const navigate = useNavigate();
@@ -25,24 +156,316 @@ function PatientOnboarding() {
     });
 
     // Step 2: Therapy Plan
-    const [drugs, setDrugs] = useState<Drug[]>([
-        { id: '1', activePrinciple: '', hourOfAssumption: '', dosage: '' },
-    ]);
+    const [selectedProtocols, setSelectedProtocols] = useState<Drug[]>([]);
+    const [protocolToAdd, setProtocolToAdd] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-    const addDrug = () => {
-        setDrugs([...drugs, { id: Date.now().toString(), activePrinciple: '', hourOfAssumption: '', dosage: '' }]);
+    const renderPhaseDetails = (drug: Drug) => (
+        <div className="mt-3 space-y-2 text-xs text-gray-600">
+            {drug.phases.map((phase, idx) => (
+                <div key={`${drug.id}-phase-summary-${idx}`} className="border-l-2 border-iov-light-blue pl-3 bg-gray-50 rounded-md py-2">
+                    <div className="font-semibold text-iov-dark-blue">
+                        {phase.name} · {formatDateLabel(phase.startDate)} → {formatDateLabel(phase.endDate)}
+                    </div>
+                    <ul className="list-disc ml-5 space-y-1">
+                        {drug.drugs.map((drugName) => (
+                            <li key={`${drug.id}-${phase.name}-${drugName}`}>
+                                <strong>{drugName}:</strong> {formatDosageValue(phase.dosageByDrug[drugName])} · {formatScheduleValue(phase.scheduleByDrug[drugName])}
+                            </li>
+                        ))}
+                    </ul>
+                    {phase.notes && <p className="text-gray-500 mt-1">{phase.notes}</p>}
+                </div>
+            ))}
+        </div>
+    );
+
+    const updatePhaseCollection = (
+        setter: Dispatch<SetStateAction<Drug[]>>,
+        drugId: string,
+        phaseIndex: number,
+        updater: (phase: DrugPhase, drug: Drug) => DrugPhase,
+    ) => {
+        setter((prev) =>
+            prev.map((drug) => {
+                if (drug.id !== drugId) return drug;
+                const updatedPhases = drug.phases.map((phase, idx) => (idx === phaseIndex ? updater(phase, drug) : phase));
+                return { ...drug, phases: updatedPhases };
+            }),
+        );
     };
 
-    const removeDrug = (id: string) => {
-        if (drugs.length > 1) {
-            setDrugs(drugs.filter((d) => d.id !== id));
+    const updateScheduleField = (
+        setter: Dispatch<SetStateAction<Drug[]>>,
+        drugId: string,
+        phaseIndex: number,
+        drugName: string,
+        field: 'frequency' | 'times',
+        value: DrugScheduleFrequency | string[],
+    ) => {
+        updatePhaseCollection(setter, drugId, phaseIndex, (phase) => {
+            const current = phase.scheduleByDrug[drugName] ?? { frequency: 'DAILY', times: [] };
+            const nextSchedule = field === 'frequency' ? { ...current, frequency: value as DrugScheduleFrequency } : { ...current, times: value as string[] };
+            return {
+                ...phase,
+                scheduleByDrug: {
+                    ...phase.scheduleByDrug,
+                    [drugName]: nextSchedule,
+                },
+            };
+        });
+    };
+
+    const updateDosageField = (
+        setter: Dispatch<SetStateAction<Drug[]>>,
+        drugId: string,
+        phaseIndex: number,
+        drugName: string,
+        field: 'amount' | 'unit',
+        value: number | null | DosageUnit | undefined,
+    ) => {
+        updatePhaseCollection(setter, drugId, phaseIndex, (phase) => {
+            const current = phase.dosageByDrug[drugName] ?? { amount: null };
+            return {
+                ...phase,
+                dosageByDrug: {
+                    ...phase.dosageByDrug,
+                    [drugName]: {
+                        ...current,
+                        [field]: value,
+                    },
+                },
+            };
+        });
+    };
+
+    const addPhaseToProtocol = (drugId: string) => {
+        setSelectedProtocols((prev) =>
+            prev.map((drug) => (drug.id === drugId ? { ...drug, phases: [...drug.phases, createEmptyPhase(drug)] } : drug)),
+        );
+    };
+
+    const removePhaseFromProtocol = (drugId: string, phaseIndex: number) => {
+        setSelectedProtocols((prev) =>
+            prev.map((drug) => {
+                if (drug.id !== drugId) return drug;
+                if (drug.phases.length <= 1) return drug;
+                return { ...drug, phases: drug.phases.filter((_, idx) => idx !== phaseIndex) };
+            }),
+        );
+    };
+
+    const handleAddProtocol = () => {
+        if (!protocolToAdd) return;
+        const template = mockDrugs.find((protocol) => protocol.id === protocolToAdd);
+        if (template && !selectedProtocols.some((protocol) => protocol.id === template.id)) {
+            setSelectedProtocols([...selectedProtocols, cloneProtocol(template)]);
         }
+        setProtocolToAdd('');
     };
 
-    const updateDrug = (id: string, field: keyof Drug, value: string) => {
-        setDrugs(drugs.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
+    const handleRemoveProtocol = (id: string) => {
+        setSelectedProtocols(selectedProtocols.filter((protocol) => protocol.id !== id));
+    };
+
+    const renderEditableProtocols = () => {
+        if (selectedProtocols.length === 0) {
+            return <p className="text-sm text-gray-600">Nessun protocollo selezionato. Aggiungine uno dal catalogo.</p>;
+        }
+
+        return (
+            <div className="space-y-3">
+                {selectedProtocols.map((drug) => (
+                    <div key={drug.id} className="bg-white p-4 rounded-lg shadow-sm space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="font-semibold text-iov-dark-blue">{drug.activePrinciple}</div>
+                                <p className="text-xs text-gray-500 capitalize">{drug.regimenType || 'simple'} · ciclo da {drug.cycleDays} giorni</p>
+                            </div>
+                            <button onClick={() => handleRemoveProtocol(drug.id)} className="text-xs text-red-600 hover:text-red-700" type="button">
+                                Rimuovi
+                            </button>
+                        </div>
+                        {drug.phases.map((phase, phaseIdx) => (
+                            <div key={`${drug.id}-phase-${phaseIdx}`} className="border rounded-lg p-3 space-y-3 bg-gray-50">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Nome fase</label>
+                                        <input
+                                            type="text"
+                                            value={phase.name}
+                                            onChange={(e) =>
+                                                updatePhaseCollection(setSelectedProtocols, drug.id, phaseIdx, (prevPhase) => ({
+                                                    ...prevPhase,
+                                                    name: e.target.value,
+                                                }))
+                                            }
+                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Inizio fase</label>
+                                        <input
+                                            type="date"
+                                            value={phase.startDate || ''}
+                                            onChange={(e) =>
+                                                updatePhaseCollection(setSelectedProtocols, drug.id, phaseIdx, (prevPhase) => ({
+                                                    ...prevPhase,
+                                                    startDate: e.target.value,
+                                                }))
+                                            }
+                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Fine fase</label>
+                                        <input
+                                            type="date"
+                                            value={phase.endDate || ''}
+                                            onChange={(e) =>
+                                                updatePhaseCollection(setSelectedProtocols, drug.id, phaseIdx, (prevPhase) => ({
+                                                    ...prevPhase,
+                                                    endDate: e.target.value,
+                                                }))
+                                            }
+                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    {drug.drugs.map((drugName) => {
+                                        const schedule = phase.scheduleByDrug[drugName] ?? { frequency: 'DAILY', times: [] };
+                                        const dosage = phase.dosageByDrug[drugName] ?? { amount: null };
+                                        return (
+                                            <div key={`${drug.id}-${phaseIdx}-${drugName}`} className="bg-white p-3 rounded border">
+                                                <div className="font-semibold text-sm mb-2">{drugName}</div>
+                                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-gray-600 mb-1">Dosaggio</label>
+                                                            <input
+                                                                type="number"
+                                                                value={dosage.amount ?? ''}
+                                                                onChange={(e) => {
+                                                                    const rawValue = e.target.value;
+                                                                    const parsedValue = rawValue === '' ? null : Number(rawValue);
+                                                                    updateDosageField(
+                                                                        setSelectedProtocols,
+                                                                        drug.id,
+                                                                        phaseIdx,
+                                                                        drugName,
+                                                                        'amount',
+                                                                        parsedValue === null || isNaN(parsedValue) ? null : parsedValue,
+                                                                    );
+                                                                }}
+                                                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                                                placeholder="Quantità"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Unità (unity)</label>
+                                                            <select
+                                                                value={dosage.unit || ''}
+                                                                onChange={(e) =>
+                                                                    updateDosageField(
+                                                                        setSelectedProtocols,
+                                                                        drug.id,
+                                                                        phaseIdx,
+                                                                        drugName,
+                                                                        'unit',
+                                                                        (e.target.value as DosageUnit) || undefined,
+                                                                    )
+                                                                }
+                                                                className="w-full px-2 py-1.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                                            >
+                                                                <option value="">—</option>
+                                                                {dosageUnitOptions.map((unit) => (
+                                                                    <option key={unit} value={unit}>
+                                                                        {unit}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Frequenza</label>
+                                                        <select
+                                                            value={schedule.frequency}
+                                                            onChange={(e) =>
+                                                                updateScheduleField(
+                                                                    setSelectedProtocols,
+                                                                    drug.id,
+                                                                    phaseIdx,
+                                                                    drugName,
+                                                                    'frequency',
+                                                                    e.target.value as DrugScheduleFrequency,
+                                                                )
+                                                            }
+                                                            className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                                        >
+                                                            {scheduleFrequencyOptions.map((option) => (
+                                                                <option key={option.value} value={option.value}>
+                                                                    {option.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Orari</label>
+                                                        <ScheduleTimesEditor
+                                                            times={schedule.times}
+                                                            onAdd={(time) =>
+                                                                updateScheduleField(
+                                                                    setSelectedProtocols,
+                                                                    drug.id,
+                                                                    phaseIdx,
+                                                                    drugName,
+                                                                    'times',
+                                                                    [...schedule.times, time],
+                                                                )
+                                                            }
+                                                            onRemove={(index) =>
+                                                                updateScheduleField(
+                                                                    setSelectedProtocols,
+                                                                    drug.id,
+                                                                    phaseIdx,
+                                                                    drugName,
+                                                                    'times',
+                                                                    schedule.times.filter((_, idx) => idx !== index),
+                                                                )
+                                                            }
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => removePhaseFromProtocol(drug.id, phaseIdx)}
+                                        className="text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
+                                        disabled={drug.phases.length <= 1}
+                                    >
+                                        Rimuovi fase
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        <button
+                            onClick={() => addPhaseToProtocol(drug.id)}
+                            type="button"
+                            className="text-sm text-iov-dark-blue hover:text-iov-dark-blue-hover flex items-center gap-1 font-medium"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Aggiungi fase
+                        </button>
+                    </div>
+                ))}
+            </div>
+        );
     };
 
     const handleSubmit = () => {
@@ -52,7 +475,7 @@ function PatientOnboarding() {
     };
 
     const canProceedStep1 = patient.name && patient.surname && patient.address && patient.telephone && patient.fiscalCode && caregiver.name && caregiver.surname && caregiver.telephone;
-    const canProceedStep2 = drugs.every((d) => d.activePrinciple && d.hourOfAssumption && d.dosage) && startDate && endDate;
+    const canProceedStep2 = selectedProtocols.length > 0 && startDate && endDate;
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -210,67 +633,42 @@ function PatientOnboarding() {
                     <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-iov-dark-blue mb-4">Piano Terapeutico</h2>
 
-                        {/* Drugs */}
+                        {/* Protocols */}
                         <div>
                             <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-iov-dark-blue">Farmaci</h3>
-                                <button
-                                    onClick={addDrug}
-                                    className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Aggiungi Farmaco
-                                </button>
+                                <h3 className="text-lg font-semibold text-iov-dark-blue">Protocolli terapeutici</h3>
                             </div>
-
-                            {drugs.map((drug, index) => (
-                                <div key={drug.id} className="bg-iov-light-blue p-4 rounded-lg mb-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="font-semibold text-iov-dark-blue-text">Farmaco {index + 1}</h4>
-                                        {drugs.length > 1 && (
-                                            <button
-                                                onClick={() => removeDrug(drug.id)}
-                                                className="text-red-600 hover:text-red-800 transition-colors"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-iov-dark-blue-text mb-2">
-                                                Principio Attivo / Nome Farmaco *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={drug.activePrinciple}
-                                                onChange={(e) => updateDrug(drug.id, 'activePrinciple', e.target.value)}
-                                                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                                                placeholder="Es. Paracetamolo"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-iov-dark-blue-text mb-2">Ora Assunzione *</label>
-                                            <input
-                                                type="time"
-                                                value={drug.hourOfAssumption}
-                                                onChange={(e) => updateDrug(drug.id, 'hourOfAssumption', e.target.value)}
-                                                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-iov-dark-blue-text mb-2">Dosaggio *</label>
-                                            <input
-                                                type="text"
-                                                value={drug.dosage}
-                                                onChange={(e) => updateDrug(drug.id, 'dosage', e.target.value)}
-                                                className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                                                placeholder="Es. 500mg"
-                                            />
-                                        </div>
+                            <div className="bg-iov-light-blue p-4 rounded-lg space-y-4">
+                                {renderEditableProtocols()}
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-dark-blue-text mb-2">
+                                        Seleziona protocollo dal catalogo
+                                    </label>
+                                    <div className="flex flex-col md:flex-row gap-2">
+                                        <select
+                                            value={protocolToAdd}
+                                            onChange={(e) => setProtocolToAdd(e.target.value)}
+                                            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
+                                        >
+                                            <option value="">Seleziona un protocollo</option>
+                                            {mockDrugs.map((protocol) => (
+                                                <option key={protocol.id} value={protocol.id}>
+                                                    {protocol.activePrinciple} · {protocol.regimenType}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={handleAddProtocol}
+                                            disabled={!protocolToAdd}
+                                            className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            Aggiungi
+                                        </button>
                                     </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
 
                         {/* Dates */}
@@ -338,15 +736,17 @@ function PatientOnboarding() {
                                     <strong>Periodo:</strong> {startDate} - {endDate}
                                 </p>
                                 <div>
-                                    <strong className="text-sm">Farmaci:</strong>
-                                    <ul className="mt-2 space-y-2">
-                                        {drugs.map((drug, index) => (
-                                            <li key={drug.id} className="bg-white p-3 rounded-lg text-sm">
-                                                <strong>Farmaco {index + 1}:</strong> {drug.activePrinciple} - {drug.dosage} alle ore{' '}
-                                                {drug.hourOfAssumption}
-                                            </li>
+                                    <strong className="text-sm">Protocolli selezionati:</strong>
+                                    <div className="mt-2 space-y-2">
+                                        {selectedProtocols.map((protocol, index) => (
+                                            <div key={protocol.id} className="bg-white p-3 rounded-lg text-sm space-y-1">
+                                                <strong>Protocollo {index + 1}:</strong> {protocol.activePrinciple}
+                                                <div className="text-xs text-gray-600">{formatDrugDosage(protocol)}</div>
+                                                <div className="text-xs text-gray-600">{formatDrugSchedule(protocol)}</div>
+                                                {renderPhaseDetails(protocol)}
+                                            </div>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
