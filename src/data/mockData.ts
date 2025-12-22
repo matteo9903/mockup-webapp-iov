@@ -521,15 +521,39 @@ export const mockIDCards: PharmacologicalIDCard[] = [
         patient: {
             name: 'Mario',
             surname: 'Rossi',
+            birthDate: '1980-01-01',
             address: 'Via Roma 123, Padova',
             telephone: '049-1234567',
             fiscalCode: 'RSSMRA80A01H501Z',
+            healthCardNumber: '8038001234567890',
         },
         caregiver: {
             name: 'Giulia',
             surname: 'Rossi',
             telephone: '340-1234567',
         },
+        emergencyNumbers: {
+            publicSafety: '113',
+            healthEmergency: '118',
+            nue: '112',
+            guardiaMedica: '116117',
+        },
+        specialistContacts: {
+            oncologyConsultation: '049-1112222',
+            oncologyUrgency: '049-1113333',
+            hospitalPharmacy: '049-2223333',
+        },
+        diagnosis: {
+            pathology: 'Carcinoma mammario',
+            currentTherapies: 'Abemaciclib + terapia ormonale',
+            administration: {
+                oral: true,
+                endovenous: false,
+                subcutaneous: false,
+            },
+        },
+        comorbidities: ['Ipertensione', 'Diabete tipo 2', 'Dislipidemia'],
+        allergies: ['Penicillina', 'Lattosio', 'Nessuna nota'],
         createdAt: daysAgo(30),
         updatedAt: daysAgo(30),
         approvalStatus: 'approved',
@@ -541,15 +565,39 @@ export const mockIDCards: PharmacologicalIDCard[] = [
         patient: {
             name: 'Anna',
             surname: 'Bianchi',
+            birthDate: '1975-02-11',
             address: 'Corso Italia 45, Castelfranco Veneto',
             telephone: '0423-987654',
             fiscalCode: 'BNCNNA75B42C957Y',
+            healthCardNumber: '8038002234567891',
         },
         caregiver: {
             name: 'Marco',
             surname: 'Bianchi',
             telephone: '347-9876543',
         },
+        emergencyNumbers: {
+            publicSafety: '113',
+            healthEmergency: '118',
+            nue: '112',
+            guardiaMedica: '116117',
+        },
+        specialistContacts: {
+            oncologyConsultation: '0423-555111',
+            oncologyUrgency: '0423-555222',
+            hospitalPharmacy: '0423-555333',
+        },
+        diagnosis: {
+            pathology: 'Neoplasia renale',
+            currentTherapies: 'Axitinib',
+            administration: {
+                oral: true,
+                endovenous: false,
+                subcutaneous: false,
+            },
+        },
+        comorbidities: ['Ipertensione', 'Asma lieve', 'Osteoporosi'],
+        allergies: ['Nessuna nota', 'Contrasto iodato', 'Polline'],
         createdAt: daysAgo(25),
         updatedAt: daysAgo(25),
         approvalStatus: 'approved',
@@ -561,15 +609,39 @@ export const mockIDCards: PharmacologicalIDCard[] = [
         patient: {
             name: 'Giuseppe',
             surname: 'Verdi',
+            birthDate: '1965-03-15',
             address: 'Piazza Garibaldi 7, Padova',
             telephone: '049-5551234',
             fiscalCode: 'VRDGPP65C15H501W',
+            healthCardNumber: '8038003234567892',
         },
         caregiver: {
             name: 'Maria',
             surname: 'Verdi',
             telephone: '333-5551234',
         },
+        emergencyNumbers: {
+            publicSafety: '113',
+            healthEmergency: '118',
+            nue: '112',
+            guardiaMedica: '116117',
+        },
+        specialistContacts: {
+            oncologyConsultation: '049-7771111',
+            oncologyUrgency: '049-7772222',
+            hospitalPharmacy: '049-7773333',
+        },
+        diagnosis: {
+            pathology: 'Neoplasia gastrointestinale',
+            currentTherapies: 'Imatinib',
+            administration: {
+                oral: true,
+                endovenous: false,
+                subcutaneous: false,
+            },
+        },
+        comorbidities: ['Cardiopatia ischemica', 'BPCO', 'Anemia cronica'],
+        allergies: ['Aspirina', 'Glutine', 'Nessuna nota'],
         createdAt: daysAgo(20),
         updatedAt: daysAgo(20),
         approvalStatus: 'approved',
@@ -804,15 +876,39 @@ export const mockPendingApprovals: PendingApproval[] = [
             patient: {
                 name: 'Laura',
                 surname: 'Neri',
+                birthDate: '1985-04-20',
                 address: 'Via Dante 89, Padova',
                 telephone: '049-7778888',
                 fiscalCode: 'NRELRA85D50H501X',
+                healthCardNumber: '8038004234567893',
             },
             caregiver: {
                 name: 'Paolo',
                 surname: 'Neri',
                 telephone: '348-7778888',
             },
+            emergencyNumbers: {
+                publicSafety: '113',
+                healthEmergency: '118',
+                nue: '112',
+                guardiaMedica: '116117',
+            },
+            specialistContacts: {
+                oncologyConsultation: '049-8881111',
+                oncologyUrgency: '049-8882222',
+                hospitalPharmacy: '049-8883333',
+            },
+            diagnosis: {
+                pathology: 'Carcinoma mammario',
+                currentTherapies: 'Tamoxifene',
+                administration: {
+                    oral: true,
+                    endovenous: false,
+                    subcutaneous: false,
+                },
+            },
+            comorbidities: ['Ipotiroidismo', 'Emicrania', 'Nessuna nota'],
+            allergies: ['Nessuna nota', 'Paracetamolo', 'Lattice'],
             createdAt: daysAgo(2),
             updatedAt: daysAgo(2),
             approvalStatus: 'pending',
@@ -844,15 +940,39 @@ export const mockPendingApprovals: PendingApproval[] = [
             patient: {
                 name: 'Francesco',
                 surname: 'Colombo',
+                birthDate: '1970-05-20',
                 address: 'Via Venezia 12, Castelfranco Veneto',
                 telephone: '0423-444555',
                 fiscalCode: 'CLMFNC70E20C957V',
+                healthCardNumber: '8038005234567894',
             },
             caregiver: {
                 name: 'Elena',
                 surname: 'Colombo',
                 telephone: '345-444555',
             },
+            emergencyNumbers: {
+                publicSafety: '113',
+                healthEmergency: '118',
+                nue: '112',
+                guardiaMedica: '116117',
+            },
+            specialistContacts: {
+                oncologyConsultation: '0423-666111',
+                oncologyUrgency: '0423-666222',
+                hospitalPharmacy: '0423-666333',
+            },
+            diagnosis: {
+                pathology: 'Iperplasia prostatica',
+                currentTherapies: 'Finasteride + Doxazosina',
+                administration: {
+                    oral: true,
+                    endovenous: false,
+                    subcutaneous: false,
+                },
+            },
+            comorbidities: ['Ipertensione', 'Artrosi', 'Nessuna nota'],
+            allergies: ['Nessuna nota', 'Amoxicillina', 'Frutta a guscio'],
             createdAt: daysAgo(1),
             updatedAt: daysAgo(1),
             approvalStatus: 'pending',
@@ -996,6 +1116,85 @@ export const mockNotifications: Notification[] = [
 ];
 
 // --- Admin / Associations / Users / Export mock data ---
+
+// Comorbidities and Allergies
+export const mockComorbidities = [
+    {
+        id: 'comorbidita_1',
+        comorbidita_principali: [
+            'Ipertensione arteriosa',
+            'Diabete mellito di tipo 2',
+            'BPCO (Broncopneumopatia Cronica Ostruttiva)',
+        ],
+    },
+    {
+        id: 'comorbidita_2',
+        comorbidita_principali: [
+            'Insufficienza cardiaca congestizia',
+            'Fibrillazione atriale',
+            'Insufficienza renale cronica stadio 3',
+        ],
+    },
+    {
+        id: 'comorbidita_3',
+        comorbidita_principali: [
+            'Osteoporosi',
+            'Artrite reumatoide',
+            'Ipotiroidismo',
+        ],
+    },
+    {
+        id: 'comorbidita_4',
+        comorbidita_principali: [
+            'Asma bronchiale',
+            'Sindrome metabolica',
+            'Depressione',
+        ],
+    },
+];
+
+export const mockAllergies = [
+    {
+        id: 'allergie_1',
+        allergie_note: [
+            'Allergia alla penicillina',
+            'Reazione avversa ai FANS',
+            'Allergia al lattice',
+        ],
+    },
+    {
+        id: 'allergie_2',
+        allergie_note: [
+            'Allergia alle cefalosporine',
+            'Ipersensibilità ai sulfamidici',
+            'Allergia all\'aspirina',
+        ],
+    },
+    {
+        id: 'allergie_3',
+        allergie_note: [
+            'Allergia ai macrolidi',
+            'Reazione avversa ai fluorochinoloni',
+            'Allergia all\'amoxicillina',
+        ],
+    },
+    {
+        id: 'allergie_4',
+        allergie_note: [
+            'Allergia al glutine',
+            'Intolleranza al lattosio',
+            'Allergia ai coloranti alimentari',
+        ],
+    },
+    {
+        id: 'allergie_5',
+        allergie_note: [
+            'Allergia allo iodio',
+            'Reazione avversa ai contrasti radiologici',
+            'Allergia al nichel',
+        ],
+    },
+];
 
 // Clinicians (users with role 'clinico')
 export const mockClinicians: Clinician[] = [

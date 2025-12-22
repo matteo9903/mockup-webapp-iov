@@ -110,25 +110,71 @@ function FarmacistaApprovals() {
                         {/* ID Card */}
                         <div className="bg-iov-light-blue p-6 rounded-lg">
                             <h4 className="text-lg font-semibold text-iov-dark-blue-text mb-4">Carta d'Identità Farmacologica</h4>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div>
-                                    <strong>Nome:</strong> {selectedApproval.idCard.patient.name}
+                            <div className="space-y-3 text-sm">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div><strong>Nome:</strong> {selectedApproval.idCard.patient.name}</div>
+                                    <div><strong>Cognome:</strong> {selectedApproval.idCard.patient.surname}</div>
+                                    <div><strong>Data di nascita:</strong> {selectedApproval.idCard.patient.birthDate}</div>
+                                    <div><strong>Codice Fiscale:</strong> {selectedApproval.idCard.patient.fiscalCode}</div>
+                                    <div className="md:col-span-2"><strong>Indirizzo:</strong> {selectedApproval.idCard.patient.address}</div>
+                                    <div><strong>Telefono:</strong> {selectedApproval.idCard.patient.telephone}</div>
+                                    <div><strong>N° Tessera Sanitaria (TEAM):</strong> {selectedApproval.idCard.patient.healthCardNumber}</div>
                                 </div>
-                                <div>
-                                    <strong>Cognome:</strong> {selectedApproval.idCard.patient.surname}
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Numeri di emergenza</strong>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div><strong>113:</strong> {selectedApproval.idCard.emergencyNumbers.publicSafety}</div>
+                                        <div><strong>118:</strong> {selectedApproval.idCard.emergencyNumbers.healthEmergency}</div>
+                                        <div><strong>112:</strong> {selectedApproval.idCard.emergencyNumbers.nue}</div>
+                                        <div><strong>Guardia Medica:</strong> {selectedApproval.idCard.emergencyNumbers.guardiaMedica}</div>
+                                    </div>
                                 </div>
-                                <div className="col-span-2">
-                                    <strong>Indirizzo:</strong> {selectedApproval.idCard.patient.address}
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Caregiver</strong>
+                                    <div>
+                                        {selectedApproval.idCard.caregiver.name} {selectedApproval.idCard.caregiver.surname} -{' '}
+                                        {selectedApproval.idCard.caregiver.telephone}
+                                    </div>
                                 </div>
-                                <div>
-                                    <strong>Telefono:</strong> {selectedApproval.idCard.patient.telephone}
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Contatti specialisti e farmacia</strong>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div><strong>Consulenze:</strong> {selectedApproval.idCard.specialistContacts.oncologyConsultation}</div>
+                                        <div><strong>Urgenze:</strong> {selectedApproval.idCard.specialistContacts.oncologyUrgency}</div>
+                                        <div><strong>Farmacia:</strong> {selectedApproval.idCard.specialistContacts.hospitalPharmacy}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <strong>Codice Fiscale:</strong> {selectedApproval.idCard.patient.fiscalCode}
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Diagnosi oncologica</strong>
+                                    <div><strong>Patologia:</strong> {selectedApproval.idCard.diagnosis.pathology}</div>
+                                    <div><strong>Terapie:</strong> {selectedApproval.idCard.diagnosis.currentTherapies}</div>
+                                    <div>
+                                        <strong>Somministrazione:</strong>{' '}
+                                        {[
+                                            selectedApproval.idCard.diagnosis.administration.oral ? 'Orale' : null,
+                                            selectedApproval.idCard.diagnosis.administration.endovenous ? 'Endovena' : null,
+                                            selectedApproval.idCard.diagnosis.administration.subcutaneous ? 'Sottocute' : null,
+                                            selectedApproval.idCard.diagnosis.administration.other
+                                                ? `Altro (${selectedApproval.idCard.diagnosis.administration.other})`
+                                                : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(', ')}
+                                    </div>
                                 </div>
-                                <div className="col-span-2 border-t-2 border-white pt-3 mt-2">
-                                    <strong>Caregiver:</strong> {selectedApproval.idCard.caregiver.name} {selectedApproval.idCard.caregiver.surname} -{' '}
-                                    {selectedApproval.idCard.caregiver.telephone}
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Comorbidita principali</strong>
+                                    <div>{selectedApproval.idCard.comorbidities.join(', ')}</div>
+                                </div>
+
+                                <div className="border-t-2 border-white pt-3">
+                                    <strong className="block mb-2">Allergie note</strong>
+                                    <div>{selectedApproval.idCard.allergies.join(', ')}</div>
                                 </div>
                             </div>
                         </div>

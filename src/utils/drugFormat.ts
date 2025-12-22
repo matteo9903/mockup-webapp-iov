@@ -8,8 +8,8 @@ const unitLabelMap: Record<DosageUnit, string> = {
 };
 
 const scheduleLabelMap: Record<DrugScheduleFrequency, string> = {
-    DAILY: 'quotidiano',
-    EVERY_OTHER_DAY: 'a giorni alterni',
+    DAILY: 'giornalmente',
+    EVERY_OTHER_DAY: 'giorni alterni',
     ODD_DAYS: 'giorni dispari',
     EVEN_DAYS: 'giorni pari',
     NONE: 'sospeso',
@@ -38,7 +38,11 @@ export const formatScheduleValue = (schedule?: DrugSchedule): string => {
         return 'sospeso';
     }
     const times = schedule.times.length ? schedule.times.join(', ') : 'orari personalizzati';
-    const label = scheduleLabelMap[schedule.frequency] || schedule.frequency.toLowerCase();
+    const baseLabel = scheduleLabelMap[schedule.frequency] || schedule.frequency.toLowerCase();
+    const label =
+        schedule.frequency === 'CUSTOM' && schedule.customCycle
+            ? `${baseLabel}: ${schedule.customCycle.daysOn} giorni on / ${schedule.customCycle.daysOff} giorni off`
+            : baseLabel;
     const extra = schedule.notes ? ` (${schedule.notes})` : '';
     return `${times} (${label})${extra}`;
 };

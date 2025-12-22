@@ -14,9 +14,11 @@ export type NotificationUrgency = 'high' | 'medium' | 'low';
 export interface PatientAnagraphics {
   name: string;
   surname: string;
+  birthDate: string;
   address: string;
   telephone: string;
   fiscalCode: string;
+  healthCardNumber: string;
 }
 
 // Caregiver contacts
@@ -26,6 +28,30 @@ export interface CaregiverContacts {
   telephone: string;
 }
 
+export interface EmergencyNumbers {
+  publicSafety: string;
+  healthEmergency: string;
+  nue: string;
+  guardiaMedica: string;
+}
+
+export interface SpecialistContacts {
+  oncologyConsultation: string;
+  oncologyUrgency: string;
+  hospitalPharmacy: string;
+}
+
+export interface OncologyDiagnosis {
+  pathology: string;
+  currentTherapies: string;
+  administration: {
+    oral: boolean;
+    endovenous: boolean;
+    subcutaneous: boolean;
+    other?: string;
+  };
+}
+
 // Pharmacological ID Card
 export interface PharmacologicalIDCard {
   id: string;
@@ -33,6 +59,11 @@ export interface PharmacologicalIDCard {
   sedeIOV: SedeIOV;
   patient: PatientAnagraphics;
   caregiver: CaregiverContacts;
+  emergencyNumbers: EmergencyNumbers;
+  specialistContacts: SpecialistContacts;
+  diagnosis: OncologyDiagnosis;
+  comorbidities: string[];
+  allergies: string[];
   createdAt: Date;
   updatedAt: Date;
   approvalStatus: ApprovalStatus;
@@ -47,6 +78,11 @@ export interface DrugSchedule {
   frequency: DrugScheduleFrequency;
   times: string[];
   notes?: string;
+  customCycle?: {
+    daysOn: number;
+    daysOff: number;
+    administrationDates: string[];
+  };
 }
 
 export interface DrugDosage {
