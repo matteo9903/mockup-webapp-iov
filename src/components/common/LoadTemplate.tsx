@@ -45,12 +45,12 @@ const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUr
     }
   };
 
-  // Initialize questions when modal opens
+  // Initialize questions when modal opens or questionnaire changes
   React.useEffect(() => {
-    if (isOpen && questions.length === 0) {
+    if (isOpen) {
       setQuestions(getDefaultQuestions());
     }
-  }, [isOpen]);
+  }, [isOpen, questionnaireId]);
 
   const defaultQuestions = getDefaultQuestions();
   const hasQuestions = defaultQuestions.length > 0;

@@ -1,7 +1,20 @@
 import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft, Check, Plus } from 'lucide-react';
-import { SedeIOV, PatientAnagraphics, CaregiverContacts, Drug, DrugPhase, DrugSchedule, DrugDosage, DosageUnit, DrugScheduleFrequency } from '../../types/index.ts';
+import {
+    SedeIOV,
+    PatientAnagraphics,
+    CaregiverContacts,
+    EmergencyNumbers,
+    SpecialistContacts,
+    OncologyDiagnosis,
+    Drug,
+    DrugPhase,
+    DrugSchedule,
+    DrugDosage,
+    DosageUnit,
+    DrugScheduleFrequency,
+} from '../../types/index.ts';
 import { mockDrugs } from '../../data/mockData.ts';
 import { formatDrugDosage, formatDrugSchedule, formatDosageValue, formatScheduleValue } from '../../utils/drugFormat.ts';
 
@@ -145,15 +158,40 @@ function PatientOnboarding() {
     const [patient, setPatient] = useState<PatientAnagraphics>({
         name: '',
         surname: '',
+        birthDate: '',
         address: '',
         telephone: '',
         fiscalCode: '',
+        healthCardNumber: '',
     });
     const [caregiver, setCaregiver] = useState<CaregiverContacts>({
         name: '',
         surname: '',
         telephone: '',
     });
+    const [emergencyNumbers, setEmergencyNumbers] = useState<EmergencyNumbers>({
+        publicSafety: '113',
+        healthEmergency: '118',
+        nue: '112',
+        guardiaMedica: '',
+    });
+    const [specialistContacts, setSpecialistContacts] = useState<SpecialistContacts>({
+        oncologyConsultation: '',
+        oncologyUrgency: '',
+        hospitalPharmacy: '',
+    });
+    const [diagnosis, setDiagnosis] = useState<OncologyDiagnosis>({
+        pathology: '',
+        currentTherapies: '',
+        administration: {
+            oral: false,
+            endovenous: false,
+            subcutaneous: false,
+            other: '',
+        },
+    });
+    const [comorbidities, setComorbidities] = useState<string[]>(['', '', '']);
+    const [allergies, setAllergies] = useState<string[]>(['', '', '']);
 
     // Step 2: Therapy Plan
     const [selectedProtocols, setSelectedProtocols] = useState<Drug[]>([]);
@@ -474,7 +512,30 @@ function PatientOnboarding() {
         navigate('/farmacista/patients');
     };
 
-    const canProceedStep1 = patient.name && patient.surname && patient.address && patient.telephone && patient.fiscalCode && caregiver.name && caregiver.surname && caregiver.telephone;
+    const hasAdministration = diagnosis.administration.oral
+        || diagnosis.administration.endovenous
+        || diagnosis.administration.subcutaneous
+        || Boolean(diagnosis.administration.other);
+    const canProceedStep1 =
+        patient.name
+        && patient.surname
+        && patient.birthDate
+        && patient.address
+        && patient.telephone
+        && patient.fiscalCode
+        && patient.healthCardNumber
+        && caregiver.name
+        && caregiver.surname
+        && caregiver.telephone
+        && emergencyNumbers.guardiaMedica
+        && specialistContacts.oncologyConsultation
+        && specialistContacts.oncologyUrgency
+        && specialistContacts.hospitalPharmacy
+        && diagnosis.pathology
+        && diagnosis.currentTherapies
+        && hasAdministration
+        && comorbidities.some((entry) => entry)
+        && allergies.some((entry) => entry);
     const canProceedStep2 = selectedProtocols.length > 0 && startDate && endDate;
 
     return (
@@ -555,6 +616,15 @@ function PatientOnboarding() {
                                         placeholder="Cognome"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Data di nascita *</label>
+                                    <input
+                                        type="date"
+                                        value={patient.birthDate}
+                                        onChange={(e) => setPatient({ ...patient, birthDate: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                    />
+                                </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-iov-gray-text mb-2">Indirizzo *</label>
                                     <input
@@ -573,6 +643,16 @@ function PatientOnboarding() {
                                         onChange={(e) => setPatient({ ...patient, telephone: e.target.value })}
                                         className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
                                         placeholder="049-1234567"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">N° Tessera Sanitaria (TEAM) *</label>
+                                    <input
+                                        type="text"
+                                        value={patient.healthCardNumber}
+                                        onChange={(e) => setPatient({ ...patient, healthCardNumber: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="8038001234567890"
                                     />
                                 </div>
                                 <div>
@@ -623,6 +703,222 @@ function PatientOnboarding() {
                                         placeholder="340-1234567"
                                     />
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Emergency Numbers */}
+                        <div className="border-t-2 border-iov-light-blue pt-6">
+                            <h3 className="text-lg font-semibold text-iov-dark-blue mb-4">Numeri Telefonici di Emergenza</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Soccorso Pubblico</label>
+                                    <input
+                                        type="text"
+                                        value={emergencyNumbers.publicSafety}
+                                        readOnly
+                                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Emergenza Sanitaria</label>
+                                    <input
+                                        type="text"
+                                        value={emergencyNumbers.healthEmergency}
+                                        readOnly
+                                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">N.U.E.</label>
+                                    <input
+                                        type="text"
+                                        value={emergencyNumbers.nue}
+                                        readOnly
+                                        className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Guardia Medica *</label>
+                                    <input
+                                        type="text"
+                                        value={emergencyNumbers.guardiaMedica}
+                                        onChange={(e) => setEmergencyNumbers({ ...emergencyNumbers, guardiaMedica: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="116117"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Specialist Contacts */}
+                        <div className="border-t-2 border-iov-light-blue pt-6">
+                            <h3 className="text-lg font-semibold text-iov-dark-blue mb-4">Contatti Specialisti e Farmacia Ospedaliera</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Specialista (Consulenze) *</label>
+                                    <input
+                                        type="text"
+                                        value={specialistContacts.oncologyConsultation}
+                                        onChange={(e) => setSpecialistContacts({ ...specialistContacts, oncologyConsultation: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="Telefono consulenze"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Specialista (Urgenze) *</label>
+                                    <input
+                                        type="text"
+                                        value={specialistContacts.oncologyUrgency}
+                                        onChange={(e) => setSpecialistContacts({ ...specialistContacts, oncologyUrgency: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="Telefono urgenze"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Farmacia ospedaliera *</label>
+                                    <input
+                                        type="text"
+                                        value={specialistContacts.hospitalPharmacy}
+                                        onChange={(e) => setSpecialistContacts({ ...specialistContacts, hospitalPharmacy: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="Telefono farmacia"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Oncology Diagnosis */}
+                        <div className="border-t-2 border-iov-light-blue pt-6">
+                            <h3 className="text-lg font-semibold text-iov-dark-blue mb-4">Diagnosi Oncologica</h3>
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Patologia *</label>
+                                    <input
+                                        type="text"
+                                        value={diagnosis.pathology}
+                                        onChange={(e) => setDiagnosis({ ...diagnosis, pathology: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        placeholder="Patologia"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Terapie oncologiche attuali *</label>
+                                    <textarea
+                                        value={diagnosis.currentTherapies}
+                                        onChange={(e) => setDiagnosis({ ...diagnosis, currentTherapies: e.target.value })}
+                                        className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                        rows={2}
+                                        placeholder="Descrivere le terapie attuali"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-iov-gray-text mb-2">Modalita di somministrazione *</label>
+                                    <div className="flex flex-wrap gap-4">
+                                        <label className="flex items-center gap-2 text-sm text-iov-gray-text">
+                                            <input
+                                                type="checkbox"
+                                                checked={diagnosis.administration.oral}
+                                                onChange={(e) =>
+                                                    setDiagnosis({
+                                                        ...diagnosis,
+                                                        administration: { ...diagnosis.administration, oral: e.target.checked },
+                                                    })
+                                                }
+                                                className="h-4 w-4"
+                                            />
+                                            Orale
+                                        </label>
+                                        <label className="flex items-center gap-2 text-sm text-iov-gray-text">
+                                            <input
+                                                type="checkbox"
+                                                checked={diagnosis.administration.endovenous}
+                                                onChange={(e) =>
+                                                    setDiagnosis({
+                                                        ...diagnosis,
+                                                        administration: { ...diagnosis.administration, endovenous: e.target.checked },
+                                                    })
+                                                }
+                                                className="h-4 w-4"
+                                            />
+                                            Endovena
+                                        </label>
+                                        <label className="flex items-center gap-2 text-sm text-iov-gray-text">
+                                            <input
+                                                type="checkbox"
+                                                checked={diagnosis.administration.subcutaneous}
+                                                onChange={(e) =>
+                                                    setDiagnosis({
+                                                        ...diagnosis,
+                                                        administration: { ...diagnosis.administration, subcutaneous: e.target.checked },
+                                                    })
+                                                }
+                                                className="h-4 w-4"
+                                            />
+                                            Sottocute
+                                        </label>
+                                        <div className="flex items-center gap-2 text-sm text-iov-gray-text">
+                                            <span>Altro:</span>
+                                            <input
+                                                type="text"
+                                                value={diagnosis.administration.other || ''}
+                                                onChange={(e) =>
+                                                    setDiagnosis({
+                                                        ...diagnosis,
+                                                        administration: { ...diagnosis.administration, other: e.target.value },
+                                                    })
+                                                }
+                                                className="px-3 py-1 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
+                                                placeholder="Specificare"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Comorbidities */}
+                        <div className="border-t-2 border-iov-light-blue pt-6">
+                            <h3 className="text-lg font-semibold text-iov-dark-blue mb-4">Comorbidita Principali *</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {comorbidities.map((value, index) => (
+                                    <div key={`comorbidity-${index}`}>
+                                        <label className="block text-sm font-medium text-iov-gray-text mb-2">Comorbidita {index + 1}</label>
+                                        <input
+                                            type="text"
+                                            value={value}
+                                            onChange={(e) => {
+                                                const next = [...comorbidities];
+                                                next[index] = e.target.value;
+                                                setComorbidities(next);
+                                            }}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                            placeholder="Inserisci comorbidita"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Allergies */}
+                        <div className="border-t-2 border-iov-light-blue pt-6">
+                            <h3 className="text-lg font-semibold text-iov-dark-blue mb-4">Allergie Note *</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {allergies.map((value, index) => (
+                                    <div key={`allergy-${index}`}>
+                                        <label className="block text-sm font-medium text-iov-gray-text mb-2">Allergia {index + 1}</label>
+                                        <input
+                                            type="text"
+                                            value={value}
+                                            onChange={(e) => {
+                                                const next = [...allergies];
+                                                next[index] = e.target.value;
+                                                setAllergies(next);
+                                            }}
+                                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
+                                            placeholder="Inserisci allergia"
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -714,16 +1010,57 @@ function PatientOnboarding() {
                                     <strong>Paziente:</strong> {patient.name} {patient.surname}
                                 </p>
                                 <p>
+                                    <strong>Data di nascita:</strong> {patient.birthDate}
+                                </p>
+                                <p>
                                     <strong>Indirizzo:</strong> {patient.address}
                                 </p>
                                 <p>
                                     <strong>Telefono:</strong> {patient.telephone}
                                 </p>
                                 <p>
+                                    <strong>N° Tessera Sanitaria (TEAM):</strong> {patient.healthCardNumber}
+                                </p>
+                                <p>
                                     <strong>Codice Fiscale:</strong> {patient.fiscalCode}
                                 </p>
                                 <p>
                                     <strong>Caregiver:</strong> {caregiver.name} {caregiver.surname} - {caregiver.telephone}
+                                </p>
+                                <p>
+                                    <strong>Guardia Medica:</strong> {emergencyNumbers.guardiaMedica}
+                                </p>
+                                <p>
+                                    <strong>Specialista (Consulenze):</strong> {specialistContacts.oncologyConsultation}
+                                </p>
+                                <p>
+                                    <strong>Specialista (Urgenze):</strong> {specialistContacts.oncologyUrgency}
+                                </p>
+                                <p>
+                                    <strong>Farmacia ospedaliera:</strong> {specialistContacts.hospitalPharmacy}
+                                </p>
+                                <p>
+                                    <strong>Diagnosi:</strong> {diagnosis.pathology}
+                                </p>
+                                <p>
+                                    <strong>Terapie oncologiche attuali:</strong> {diagnosis.currentTherapies}
+                                </p>
+                                <p>
+                                    <strong>Somministrazione:</strong>{' '}
+                                    {[
+                                        diagnosis.administration.oral ? 'Orale' : null,
+                                        diagnosis.administration.endovenous ? 'Endovena' : null,
+                                        diagnosis.administration.subcutaneous ? 'Sottocute' : null,
+                                        diagnosis.administration.other ? `Altro (${diagnosis.administration.other})` : null,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(', ')}
+                                </p>
+                                <p>
+                                    <strong>Comorbidita:</strong> {comorbidities.filter((entry) => entry).join(', ')}
+                                </p>
+                                <p>
+                                    <strong>Allergie:</strong> {allergies.filter((entry) => entry).join(', ')}
                                 </p>
                             </div>
                         </div>

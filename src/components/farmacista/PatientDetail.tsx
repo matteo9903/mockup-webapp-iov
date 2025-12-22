@@ -24,15 +24,12 @@ import { formatDrugDosage, formatDrugSchedule, formatDosageValue, formatSchedule
 import QuestionnaireList from '../common/QuestionnaireList.tsx';
 import NotificationsList from '../common/NotificationsList.tsx';
 
-type Tab = 'info' | 'questionnaires' | 'notifications';
+type Tab = 'info' | 'therapy' | 'questionnaires' | 'notifications';
 
 const scheduleFrequencyOptions: { value: DrugScheduleFrequency; label: string }[] = [
-    { value: 'DAILY', label: 'Giornaliero' },
+    { value: 'DAILY', label: 'Giornalmente' },
     { value: 'EVERY_OTHER_DAY', label: 'Giorni alterni' },
-    { value: 'ODD_DAYS', label: 'Giorni dispari' },
-    { value: 'EVEN_DAYS', label: 'Giorni pari' },
     { value: 'CUSTOM', label: 'Personalizzato' },
-    { value: 'NONE', label: 'Nessuno' },
 ];
 
 const dosageUnitOptions: DosageUnit[] = ['MG', 'MG_M2', 'G', 'MG_KG'];
@@ -62,6 +59,58 @@ const getQuestionsForQuestionnaire = (questionnaireId?: string) => {
         default:
             return [];
     }
+};
+
+const buildAdministrationDates = (startDate: string, endDate: string, daysOn: number, daysOff: number): string[] => {
+    if (!startDate || !endDate || daysOn <= 0 || daysOff < 0) {
+        return [];
+    }
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+        return [];
+    }
+    const cycleLength = daysOn + daysOff;
+    if (cycleLength <= 0) {
+        return [];
+    }
+
+    const dates: string[] = [];
+    const cursor = new Date(start);
+    let dayIndex = 0;
+    while (cursor <= end) {
+        if (dayIndex % cycleLength < daysOn) {
+            dates.push(cursor.toISOString().split('T')[0]);
+        }
+        cursor.setDate(cursor.getDate() + 1);
+        dayIndex += 1;
+    }
+    return dates;
+};
+
+const applyCustomCycleToPhase = (phase: DrugPhase): DrugPhase => {
+    const updatedScheduleByDrug = Object.fromEntries(
+        Object.entries(phase.scheduleByDrug).map(([drugName, schedule]) => {
+            if (schedule.frequency !== 'CUSTOM' || !schedule.customCycle) {
+                return [drugName, schedule];
+            }
+            const { daysOn, daysOff } = schedule.customCycle;
+            const administrationDates = buildAdministrationDates(phase.startDate, phase.endDate, daysOn, daysOff);
+            return [
+                drugName,
+                {
+                    ...schedule,
+                    customCycle: {
+                        ...schedule.customCycle,
+                        daysOn,
+                        daysOff,
+                        administrationDates,
+                    },
+                },
+            ];
+        }),
+    );
+    return { ...phase, scheduleByDrug: updatedScheduleByDrug };
 };
 
 const createEmptyPhase = (drug: Drug): DrugPhase => {
@@ -275,7 +324,13 @@ function PatientDetail() {
                 if (drug.id !== drugId) {
                     return drug;
                 }
-                const updatedPhases = drug.phases.map((phase, idx) => (idx === phaseIndex ? updater(phase, drug) : phase));
+                const updatedPhases = drug.phases.map((phase, idx) => {
+                    if (idx !== phaseIndex) {
+                        return phase;
+                    }
+                    const nextPhase = updater(phase, drug);
+                    return applyCustomCycleToPhase(nextPhase);
+                });
                 return { ...drug, phases: updatedPhases };
             }),
         );
@@ -293,13 +348,60 @@ function PatientDetail() {
             const existingSchedule = phase.scheduleByDrug[drugName] ?? { frequency: 'DAILY', times: [] };
             const updatedSchedule =
                 field === 'frequency'
-                    ? { ...existingSchedule, frequency: value as DrugScheduleFrequency }
+                    ? (() => {
+                        const nextFrequency = value as DrugScheduleFrequency;
+                        if (nextFrequency === 'CUSTOM') {
+                            const daysOn = existingSchedule.customCycle?.daysOn ?? 1;
+                            const daysOff = existingSchedule.customCycle?.daysOff ?? 1;
+                            return {
+                                ...existingSchedule,
+                                frequency: nextFrequency,
+                                customCycle: {
+                                    daysOn,
+                                    daysOff,
+                                    administrationDates: buildAdministrationDates(phase.startDate, phase.endDate, daysOn, daysOff),
+                                },
+                            };
+                        }
+                        return { ...existingSchedule, frequency: nextFrequency };
+                    })()
                     : { ...existingSchedule, times: value as string[] };
             return {
                 ...phase,
                 scheduleByDrug: {
                     ...phase.scheduleByDrug,
                     [drugName]: updatedSchedule,
+                },
+            };
+        });
+    };
+
+    const updateCustomCycle = (
+        setter: React.Dispatch<React.SetStateAction<Drug[]>>,
+        drugId: string,
+        phaseIndex: number,
+        drugName: string,
+        daysOn: number,
+        daysOff: number,
+    ) => {
+        updatePhaseCollection(setter, drugId, phaseIndex, (phase) => {
+            const existingSchedule = phase.scheduleByDrug[drugName] ?? { frequency: 'CUSTOM', times: [] };
+            const safeDaysOn = Number.isFinite(daysOn) && daysOn > 0 ? daysOn : 1;
+            const safeDaysOff = Number.isFinite(daysOff) && daysOff >= 0 ? daysOff : 0;
+            const administrationDates = buildAdministrationDates(phase.startDate, phase.endDate, safeDaysOn, safeDaysOff);
+            return {
+                ...phase,
+                scheduleByDrug: {
+                    ...phase.scheduleByDrug,
+                    [drugName]: {
+                        ...existingSchedule,
+                        frequency: 'CUSTOM',
+                        customCycle: {
+                            daysOn: safeDaysOn,
+                            daysOff: safeDaysOff,
+                            administrationDates,
+                        },
+                    },
                 },
             };
         });
@@ -428,6 +530,9 @@ function PatientDetail() {
                                 <div className="space-y-2">
                                     {drug.drugs.map((drugName) => {
                                         const schedule = phase.scheduleByDrug[drugName] ?? { frequency: 'DAILY', times: [] };
+                                        const frequencyValue = scheduleFrequencyOptions.some((option) => option.value === schedule.frequency)
+                                            ? schedule.frequency
+                                            : 'CUSTOM';
                                         const dosage = phase.dosageByDrug[drugName] ?? { amount: null };
                                         return (
                                             <div key={`${drug.id}-${phaseIdx}-${drugName}`} className="bg-white p-3 rounded border">
@@ -483,7 +588,7 @@ function PatientDetail() {
                                                     <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Frequenza</label>
                                 <select
-                                                            value={schedule.frequency}
+                                                            value={frequencyValue}
                                                             onChange={(e) =>
                                                                 updateScheduleField(
                                                                     setDrugsState,
@@ -502,6 +607,53 @@ function PatientDetail() {
                                                                 </option>
                                                             ))}
                                                         </select>
+                                                        {frequencyValue === 'CUSTOM' && (
+                                                            <div className="mt-2 space-y-2">
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Giorni on</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min={1}
+                                                                            value={schedule.customCycle?.daysOn ?? 1}
+                                                                            onChange={(e) =>
+                                                                                updateCustomCycle(
+                                                                                    setDrugsState,
+                                                                                    drug.id,
+                                                                                    phaseIdx,
+                                                                                    drugName,
+                                                                                    Number(e.target.value),
+                                                                                    schedule.customCycle?.daysOff ?? 0,
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Giorni off</label>
+                                                                        <input
+                                                                            type="number"
+                                                                            min={0}
+                                                                            value={schedule.customCycle?.daysOff ?? 0}
+                                                                            onChange={(e) =>
+                                                                                updateCustomCycle(
+                                                                                    setDrugsState,
+                                                                                    drug.id,
+                                                                                    phaseIdx,
+                                                                                    drugName,
+                                                                                    schedule.customCycle?.daysOn ?? 1,
+                                                                                    Number(e.target.value),
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-3 py-1.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-iov-dark-blue text-sm"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <p className="text-xs text-gray-500">
+                                                                    Giorni: {schedule.customCycle?.administrationDates.length ?? 0}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-medium text-gray-600 mb-1">Orari</label>
@@ -624,6 +776,7 @@ function PatientDetail() {
 
     const tabs = [
         { id: 'info' as Tab, label: 'Informazioni', icon: User },
+        { id: 'therapy' as Tab, label: 'Terapia', icon: User },
         { id: 'questionnaires' as Tab, label: 'Questionari', icon: FileText },
         { id: 'notifications' as Tab, label: 'Notifiche', icon: Bell },
     ];
@@ -690,293 +843,357 @@ function PatientDetail() {
                                 {/* Pharmacological ID Card */}
                                 <div className="bg-iov-light-blue p-6 rounded-lg">
                                     <h2 className="text-xl font-bold text-iov-dark-blue-text mb-4">Carta d'Identità Farmacologica</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <strong>Nome:</strong> {patient.idCard.patient.name}
+                                    <div className="space-y-4 text-sm">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <strong>Nome:</strong> {patient.idCard.patient.name}
+                                            </div>
+                                            <div>
+                                                <strong>Cognome:</strong> {patient.idCard.patient.surname}
+                                            </div>
+                                            <div>
+                                                <strong>Data di nascita:</strong> {patient.idCard.patient.birthDate}
+                                            </div>
+                                            <div>
+                                                <strong>Codice Fiscale:</strong> {patient.idCard.patient.fiscalCode}
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <strong>Indirizzo e Citta:</strong> {patient.idCard.patient.address}
+                                            </div>
+                                            <div>
+                                                <strong>Telefono:</strong> {patient.idCard.patient.telephone}
+                                            </div>
+                                            <div>
+                                                <strong>N° Tessera Sanitaria (TEAM):</strong> {patient.idCard.patient.healthCardNumber}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <strong>Cognome:</strong> {patient.idCard.patient.surname}
+
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Numeri Telefonici di Emergenza</strong>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div><strong>Soccorso Pubblico:</strong> {patient.idCard.emergencyNumbers.publicSafety}</div>
+                                                <div><strong>Emergenza Sanitaria:</strong> {patient.idCard.emergencyNumbers.healthEmergency}</div>
+                                                <div><strong>N.U.E.:</strong> {patient.idCard.emergencyNumbers.nue}</div>
+                                                <div><strong>Guardia Medica:</strong> {patient.idCard.emergencyNumbers.guardiaMedica}</div>
+                                            </div>
                                         </div>
-                                        <div className="md:col-span-2">
-                                            <strong>Indirizzo:</strong> {patient.idCard.patient.address}
-                                        </div>
-                                        <div>
-                                            <strong>Telefono:</strong> {patient.idCard.patient.telephone}
-                                        </div>
-                                        <div>
-                                            <strong>Codice Fiscale:</strong> {patient.idCard.patient.fiscalCode}
-                                        </div>
-                                        <div className="md:col-span-2 border-t-2 border-white pt-4 mt-2">
-                                            <strong className="block mb-2">Caregiver:</strong>
+
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Contatti Caregiver</strong>
                                             <div className="ml-4">
                                                 {patient.idCard.caregiver.name} {patient.idCard.caregiver.surname} -{' '}
                                                 {patient.idCard.caregiver.telephone}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* Therapy Plan */}
-                                {therapyPlan && (
-                                    <div className="bg-iov-pink p-6 rounded-lg">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-xl font-bold text-iov-pink-text">Piano Terapeutico Attivo</h2>
-                                            {!isEditingTherapy && (
-                                                <button
-                                                    onClick={() => {
-                                                        setIsEditingTherapy(true);
-                                                        setEditedStartDate(new Date(therapyPlan.startDate).toISOString().split('T')[0]);
-                                                        setEditedEndDate(new Date(therapyPlan.endDate).toISOString().split('T')[0]);
-                                                        setEditedDrugs(therapyPlan.drugs.map(cloneProtocol));
-                                                        setProtocolToAdd('');
-                                                        setOriginalStatus('Attivo');
-                                                        setEditedStatus('Attivo');
-                                                    }}
-                                                    className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                                                >
-                                                    Modifica
-                                                </button>
-                                            )}
-                                        </div>
-                                        {isEditingTherapy ? (
-                                            <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-iov-pink-text mb-2">Data Inizio</label>
-                                                        <input
-                                                            type="date"
-                                                            value={editedStartDate}
-                                                            onChange={(e) => setEditedStartDate(e.target.value)}
-                                                            className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-iov-pink-text mb-2">Data Fine</label>
-                                                        <input
-                                                            type="date"
-                                                            value={editedEndDate}
-                                                            onChange={(e) => setEditedEndDate(e.target.value)}
-                                                            className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-iov-pink-text mb-2">Stato</label>
-                                                    <select
-                                                        value={editedStatus}
-                                                        onChange={(e) => setEditedStatus(e.target.value as 'Attivo' | 'Non Attivo')}
-                                                        className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
-                                                    >
-                                                        <option value="Attivo">Attivo</option>
-                                                        <option value="Non Attivo">Non Attivo</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <strong className="block mb-2 text-iov-pink-text">Protocolli selezionati:</strong>
-                                                    {renderEditableProtocols(editedDrugs, setEditedDrugs, handleRemoveEditedProtocol, {
-                                                        heading: 'text-iov-pink-text',
-                                                    })}
-                                                    <div className="mt-4">
-                                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                                            Aggiungi protocollo dal catalogo
-                                                        </label>
-                                                        <div className="flex flex-col md:flex-row gap-2">
-                                                            <select
-                                                                value={protocolToAdd}
-                                                                onChange={(e) => setProtocolToAdd(e.target.value)}
-                                                                className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
-                                                            >
-                                                                <option value="">Seleziona un protocollo</option>
-                                                                {availableProtocols.map((protocol) => (
-                                                                    <option key={protocol.id} value={protocol.id}>
-                                                                        {protocol.activePrinciple} · {protocol.regimenType}
-                                                                    </option>
-                                                                ))}
-                                                            </select>
-                                                            <button
-                                                                onClick={handleAddEditedProtocol}
-                                                                className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-                                                                disabled={!protocolToAdd}
-                                                                type="button"
-                                                            >
-                                                                <Plus className="w-4 h-4" />
-                                                                Aggiungi
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => {
-                                                            if (editedStatus !== originalStatus) {
-                                                                setShowConfirmDialog(true);
-                                                            } else {
-                                                                applyTherapyChanges();
-                                                            }
-                                                        }}
-                                                        className="flex-1 bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Salva
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsEditingTherapy(false)}
-                                                        className="flex-1 bg-gray-400 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                                                    >
-                                                        Annulla
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                                    <div>
-                                                        <strong>Data Inizio:</strong> {new Date(therapyPlan.startDate).toLocaleDateString('it-IT')}
-                                                    </div>
-                                                    <div>
-                                                        <strong>Data Fine:</strong> {new Date(therapyPlan.endDate).toLocaleDateString('it-IT')}
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <strong className="block mb-2">Farmaci:</strong>
-                                                    <div className="space-y-2">
-                                                        {therapyPlan.drugs.map((drug: Drug) => (
-                                                            <div key={drug.id} className="bg-white p-3 rounded-lg text-sm space-y-1">
-                                                                <strong>{drug.activePrinciple}</strong>
-                                                                <div className="text-xs text-gray-600">{formatDrugDosage(drug)}</div>
-                                                                <div className="text-xs text-gray-600">{formatDrugSchedule(drug)}</div>
-                                                                {renderPhaseDetails(drug)}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Add New Therapy Plan */}
-                                <div className="bg-iov-yellow p-6 rounded-lg">
-                                    <button
-                                        onClick={() => setIsExpandedNewTherapy(!isExpandedNewTherapy)}
-                                        className="w-full flex items-center justify-between mb-4 hover:opacity-90 transition-opacity"
-                                    >
-                                        <h2 className="text-xl font-bold text-iov-yellow-text">Aggiungi Nuovo Piano Terapeutico</h2>
-                                        <span className="text-2xl text-iov-yellow-text">{isExpandedNewTherapy ? '−' : '+'}</span>
-                                    </button>
-                                    {isExpandedNewTherapy && (
-                                        <div className="space-y-4">
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Contatti Specialisti e Farmacia Ospedaliera</strong>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label className="block text-sm font-medium text-iov-yellow-text mb-2">Data Inizio</label>
-                                                    <input
-                                                        type="date"
-                                                        value={newTherapyStart}
-                                                        onChange={(e) => setNewTherapyStart(e.target.value)}
-                                                        className="w-full px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:outline-none focus:border-iov-dark-blue"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-sm font-medium text-iov-yellow-text mb-2">Data Fine</label>
-                                                    <input
-                                                        type="date"
-                                                        value={newTherapyEnd}
-                                                        onChange={(e) => setNewTherapyEnd(e.target.value)}
-                                                        className="w-full px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:outline-none focus:border-iov-dark-blue"
-                                                    />
-                                                </div>
+                                                <div><strong>Consulenze:</strong> {patient.idCard.specialistContacts.oncologyConsultation}</div>
+                                                <div><strong>Urgenze:</strong> {patient.idCard.specialistContacts.oncologyUrgency}</div>
+                                                <div><strong>Farmacia ospedaliera:</strong> {patient.idCard.specialistContacts.hospitalPharmacy}</div>
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-iov-yellow-text mb-2">Protocolli da includere</label>
-                                                {renderEditableProtocols(newTherapyDrugs, setNewTherapyDrugs, handleRemoveNewProtocol, {
-                                                    heading: 'text-iov-yellow-text',
-                                                })}
-                                                <div className="mt-4">
-                                                    <label className="block text-xs font-medium text-iov-yellow-text mb-1">
-                                                        Seleziona protocollo da aggiungere
-                                                    </label>
-                                                    <div className="flex flex-col md:flex-row gap-2">
-                                                        <select
-                                                            value={newProtocolToAdd}
-                                                            onChange={(e) => setNewProtocolToAdd(e.target.value)}
-                                                            className="flex-1 px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
-                                                        >
-                                                            <option value="">Scegli dalla libreria</option>
-                                                            {availableProtocols.map((protocol) => (
-                                                                <option key={protocol.id} value={protocol.id}>
-                                                                    {protocol.activePrinciple} · {protocol.regimenType}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                        <button
-                                                            onClick={handleAddNewProtocol}
-                                                            type="button"
-                                                            className="bg-iov-yellow-text text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
-                                                            disabled={!newProtocolToAdd}
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                            Aggiungi protocollo
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <button
-                                                className="w-full bg-iov-yellow-text text-white font-medium px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-                                                disabled={!newTherapyStart || !newTherapyEnd || newTherapyDrugs.length === 0}
-                                                type="button"
-                                                onClick={handleRegisterNewTherapy}
-                                            >
-                                                Registra Piano Terapeutico
-                                            </button>
                                         </div>
-                                    )}
+
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Diagnosi Oncologica</strong>
+                                            <div className="space-y-2">
+                                                <div><strong>Patologia:</strong> {patient.idCard.diagnosis.pathology}</div>
+                                                <div><strong>Terapie oncologiche attuali:</strong> {patient.idCard.diagnosis.currentTherapies}</div>
+                                                <div>
+                                                    <strong>Modalita di somministrazione:</strong>{' '}
+                                                    {[
+                                                        patient.idCard.diagnosis.administration.oral ? 'Orale' : null,
+                                                        patient.idCard.diagnosis.administration.endovenous ? 'Endovena' : null,
+                                                        patient.idCard.diagnosis.administration.subcutaneous ? 'Sottocute' : null,
+                                                        patient.idCard.diagnosis.administration.other
+                                                            ? `Altro (${patient.idCard.diagnosis.administration.other})`
+                                                            : null,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(', ')}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Comorbidita Principali</strong>
+                                            <div className="ml-4">{patient.idCard.comorbidities.join(', ')}</div>
+                                        </div>
+
+                                        <div className="border-t-2 border-white pt-4">
+                                            <strong className="block mb-2">Allergie Note</strong>
+                                            <div className="ml-4">{patient.idCard.allergies.join(', ')}</div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Therapy plan history */}
-                                <div className="bg-gray-100 p-6 rounded-lg">
-                                    <h2 className="text-xl font-bold text-iov-dark-blue mb-4">Storico Piani Terapeutici Disattivati</h2>
-                                    {therapyHistory.length === 0 ? (
-                                        <p className="text-sm text-gray-600">Nessun piano terapeutico disattivato registrato.</p>
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {therapyHistory.map((entry) => (
-                                                <div key={entry.plan.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-iov-dark-blue">
-                                                                {entry.plan.drugs.map((drug) => drug.activePrinciple).join(', ')}
-                                                            </p>
-                                                            <p className="text-xs text-gray-600">
-                                                                Inizio:{' '}
-                                                                {entry.plan.startDate.toLocaleDateString('it-IT')} · Fine:{' '}
-                                                                {entry.plan.endDate.toLocaleDateString('it-IT')}
-                                                            </p>
-                                                        </div>
-                                                        <span className="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded-full inline-flex items-center justify-center">
-                                                            Disattivato il {entry.deactivatedAt.toLocaleDateString('it-IT')}
-                                                        </span>
-                                                    </div>
-                                                    {entry.deactivationReason && (
-                                                        <p className="text-xs text-gray-500 mt-2 italic">{entry.deactivationReason}</p>
-                                                    )}
-                                                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {entry.plan.drugs.map((drug) => (
-                                                            <div
-                                                                key={`${entry.plan.id}-${drug.id}`}
-                                                                className="border rounded-md p-3 bg-gray-50"
-                                                            >
-                                                                <p className="text-sm font-semibold text-iov-dark-blue">{drug.activePrinciple}</p>
-                                                                <p className="text-xs text-gray-600">{formatDrugDosage(drug)}</p>
-                                                                <p className="text-xs text-gray-600">{formatDrugSchedule(drug)}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
                             </>
                         )}
+                    </div>
+                )}
+
+                {activeTab === 'therapy' && (
+                    <div className="space-y-6">
+                        {/* Therapy Plan */}
+                        {therapyPlan && (
+                            <div className="bg-iov-pink p-6 rounded-lg">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-iov-pink-text">Piano Terapeutico Attivo</h2>
+                                    {!isEditingTherapy && (
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingTherapy(true);
+                                                setEditedStartDate(new Date(therapyPlan.startDate).toISOString().split('T')[0]);
+                                                setEditedEndDate(new Date(therapyPlan.endDate).toISOString().split('T')[0]);
+                                                setEditedDrugs(therapyPlan.drugs.map(cloneProtocol));
+                                                setProtocolToAdd('');
+                                                setOriginalStatus('Attivo');
+                                                setEditedStatus('Attivo');
+                                            }}
+                                            className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                        >
+                                            Modifica
+                                        </button>
+                                    )}
+                                </div>
+                                {isEditingTherapy ? (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-iov-pink-text mb-2">Data Inizio</label>
+                                                <input
+                                                    type="date"
+                                                    value={editedStartDate}
+                                                    onChange={(e) => setEditedStartDate(e.target.value)}
+                                                    className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-iov-pink-text mb-2">Data Fine</label>
+                                                <input
+                                                    type="date"
+                                                    value={editedEndDate}
+                                                    onChange={(e) => setEditedEndDate(e.target.value)}
+                                                    className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-iov-pink-text mb-2">Stato</label>
+                                            <select
+                                                value={editedStatus}
+                                                onChange={(e) => setEditedStatus(e.target.value as 'Attivo' | 'Non Attivo')}
+                                                className="w-full px-3 py-2 border-2 border-iov-pink-border rounded-lg focus:outline-none focus:border-iov-dark-blue"
+                                            >
+                                                <option value="Attivo">Attivo</option>
+                                                <option value="Non Attivo">Non Attivo</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <strong className="block mb-2 text-iov-pink-text">Protocolli selezionati:</strong>
+                                            {renderEditableProtocols(editedDrugs, setEditedDrugs, handleRemoveEditedProtocol, {
+                                                heading: 'text-iov-pink-text',
+                                            })}
+                                            <div className="mt-4">
+                                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                    Aggiungi protocollo dal catalogo
+                                                </label>
+                                                <div className="flex flex-col md:flex-row gap-2">
+                                                    <select
+                                                        value={protocolToAdd}
+                                                        onChange={(e) => setProtocolToAdd(e.target.value)}
+                                                        className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
+                                                    >
+                                                        <option value="">Seleziona un protocollo</option>
+                                                        {availableProtocols.map((protocol) => (
+                                                            <option key={protocol.id} value={protocol.id}>
+                                                                {protocol.activePrinciple} · {protocol.regimenType}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <button
+                                                        onClick={handleAddEditedProtocol}
+                                                        className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                                                        disabled={!protocolToAdd}
+                                                        type="button"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                        Aggiungi
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    if (editedStatus !== originalStatus) {
+                                                        setShowConfirmDialog(true);
+                                                    } else {
+                                                        applyTherapyChanges();
+                                                    }
+                                                }}
+                                                className="flex-1 bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                            >
+                                                Salva
+                                            </button>
+                                            <button
+                                                onClick={() => setIsEditingTherapy(false)}
+                                                className="flex-1 bg-gray-400 text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                            >
+                                                Annulla
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <strong>Data Inizio:</strong> {new Date(therapyPlan.startDate).toLocaleDateString('it-IT')}
+                                            </div>
+                                            <div>
+                                                <strong>Data Fine:</strong> {new Date(therapyPlan.endDate).toLocaleDateString('it-IT')}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <strong className="block mb-2">Farmaci:</strong>
+                                            <div className="space-y-2">
+                                                {therapyPlan.drugs.map((drug: Drug) => (
+                                                    <div key={drug.id} className="bg-white p-3 rounded-lg text-sm space-y-1">
+                                                        <strong>{drug.activePrinciple}</strong>
+                                                        <div className="text-xs text-gray-600">{formatDrugDosage(drug)}</div>
+                                                        <div className="text-xs text-gray-600">{formatDrugSchedule(drug)}</div>
+                                                        {renderPhaseDetails(drug)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Add New Therapy Plan */}
+                        <div className="bg-iov-yellow p-6 rounded-lg">
+                            <button
+                                onClick={() => setIsExpandedNewTherapy(!isExpandedNewTherapy)}
+                                className="w-full flex items-center justify-between mb-4 hover:opacity-90 transition-opacity"
+                            >
+                                <h2 className="text-xl font-bold text-iov-yellow-text">Aggiungi Nuovo Piano Terapeutico</h2>
+                                <span className="text-2xl text-iov-yellow-text">{isExpandedNewTherapy ? '−' : '+'}</span>
+                            </button>
+                            {isExpandedNewTherapy && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-iov-yellow-text mb-2">Data Inizio</label>
+                                            <input
+                                                type="date"
+                                                value={newTherapyStart}
+                                                onChange={(e) => setNewTherapyStart(e.target.value)}
+                                                className="w-full px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:outline-none focus:border-iov-dark-blue"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-iov-yellow-text mb-2">Data Fine</label>
+                                            <input
+                                                type="date"
+                                                value={newTherapyEnd}
+                                                onChange={(e) => setNewTherapyEnd(e.target.value)}
+                                                className="w-full px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:outline-none focus:border-iov-dark-blue"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-iov-yellow-text mb-2">Protocolli da includere</label>
+                                        {renderEditableProtocols(newTherapyDrugs, setNewTherapyDrugs, handleRemoveNewProtocol, {
+                                            heading: 'text-iov-yellow-text',
+                                        })}
+                                        <div className="mt-4">
+                                            <label className="block text-xs font-medium text-iov-yellow-text mb-1">
+                                                Seleziona protocollo da aggiungere
+                                            </label>
+                                            <div className="flex flex-col md:flex-row gap-2">
+                                                <select
+                                                    value={newProtocolToAdd}
+                                                    onChange={(e) => setNewProtocolToAdd(e.target.value)}
+                                                    className="flex-1 px-3 py-2 border-2 border-iov-yellow-dark rounded-lg focus:border-iov-dark-blue focus:outline-none text-sm"
+                                                >
+                                                    <option value="">Scegli dalla libreria</option>
+                                                    {availableProtocols.map((protocol) => (
+                                                        <option key={protocol.id} value={protocol.id}>
+                                                            {protocol.activePrinciple} · {protocol.regimenType}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    onClick={handleAddNewProtocol}
+                                                    type="button"
+                                                    className="bg-iov-yellow-text text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+                                                    disabled={!newProtocolToAdd}
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    Aggiungi protocollo
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="w-full bg-iov-yellow-text text-white font-medium px-4 py-3 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                                        disabled={!newTherapyStart || !newTherapyEnd || newTherapyDrugs.length === 0}
+                                        type="button"
+                                        onClick={handleRegisterNewTherapy}
+                                    >
+                                        Registra Piano Terapeutico
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Therapy plan history */}
+                        <div className="bg-gray-100 p-6 rounded-lg">
+                            <h2 className="text-xl font-bold text-iov-dark-blue mb-4">Storico Piani Terapeutici Disattivati</h2>
+                            {therapyHistory.length === 0 ? (
+                                <p className="text-sm text-gray-600">Nessun piano terapeutico disattivato registrato.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {therapyHistory.map((entry) => (
+                                        <div key={entry.plan.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                                <div>
+                                                    <p className="text-sm font-semibold text-iov-dark-blue">
+                                                        {entry.plan.drugs.map((drug) => drug.activePrinciple).join(', ')}
+                                                    </p>
+                                                    <p className="text-xs text-gray-600">
+                                                        Inizio:{' '}
+                                                        {entry.plan.startDate.toLocaleDateString('it-IT')} · Fine:{' '}
+                                                        {entry.plan.endDate.toLocaleDateString('it-IT')}
+                                                    </p>
+                                                </div>
+                                                <span className="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded-full inline-flex items-center justify-center">
+                                                    Disattivato il {entry.deactivatedAt.toLocaleDateString('it-IT')}
+                                                </span>
+                                            </div>
+                                            {entry.deactivationReason && (
+                                                <p className="text-xs text-gray-500 mt-2 italic">{entry.deactivationReason}</p>
+                                            )}
+                                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {entry.plan.drugs.map((drug) => (
+                                                    <div
+                                                        key={`${entry.plan.id}-${drug.id}`}
+                                                        className="border rounded-md p-3 bg-gray-50"
+                                                    >
+                                                        <p className="text-sm font-semibold text-iov-dark-blue">{drug.activePrinciple}</p>
+                                                        <p className="text-xs text-gray-600">{formatDrugDosage(drug)}</p>
+                                                        <p className="text-xs text-gray-600">{formatDrugSchedule(drug)}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
