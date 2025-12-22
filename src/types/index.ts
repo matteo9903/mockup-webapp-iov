@@ -39,11 +39,38 @@ export interface PharmacologicalIDCard {
 }
 
 // Drug in therapy plan
+export type DrugScheduleFrequency = 'DAILY' | 'EVERY_OTHER_DAY' | 'ODD_DAYS' | 'EVEN_DAYS' | 'NONE' | 'CUSTOM';
+
+export type DosageUnit = 'MG' | 'MG_M2' | 'G' | 'MG_KG';
+
+export interface DrugSchedule {
+  frequency: DrugScheduleFrequency;
+  times: string[];
+  notes?: string;
+}
+
+export interface DrugDosage {
+  amount: number | null;
+  unit?: DosageUnit;
+}
+
+export interface DrugPhase {
+  name: string;
+  startDate: string;
+  endDate: string;
+  scheduleByDrug: Record<string, DrugSchedule>;
+  dosageByDrug: Record<string, DrugDosage>;
+  notes?: string;
+}
+
 export interface Drug {
   id: string;
   activePrinciple: string;
-  hourOfAssumption: string;
-  dosage: string;
+  regimenType?: 'simple' | 'combination';
+  cycleDays: number;
+  drugs: string[];
+  protocolNotes?: string;
+  phases: DrugPhase[];
 }
 
 // Therapy Plan
@@ -58,15 +85,26 @@ export interface TherapyPlan {
   approvalStatus: ApprovalStatus;
 }
 
+export interface TherapyPlanHistoryEntry {
+  plan: TherapyPlan;
+  deactivatedAt: Date;
+  deactivationReason?: string;
+}
+
+export interface Clinician extends User {
+  pdta: PDTA;
+  sedeIOV: SedeIOV;
+}
+
 // Patient
 export interface Patient {
   id: string;
   name: string;
   surname: string;
-  pdta: PDTA;
-  sedeIOV: SedeIOV;
+  unitaOperativa: string;
   idCard?: PharmacologicalIDCard;
   therapyPlan?: TherapyPlan;
+  therapyHistory?: TherapyPlanHistoryEntry[];
   createdAt: Date;
 }
 

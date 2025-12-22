@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { ReactNode } from 'react';
 
 interface NavItem {
@@ -12,6 +12,25 @@ interface NavbarProps {
 }
 
 function Navbar({ items }: NavbarProps) {
+    const location = useLocation();
+
+    const isItemActive = (itemTo: string) => {
+        const path = location.pathname;
+        if (path === itemTo || path.startsWith(`${itemTo}/`)) {
+            return true;
+        }
+
+        const isPatientsItem = itemTo.endsWith('/patients');
+        if (isPatientsItem) {
+            const base = itemTo.replace(/\/patients$/, '');
+            if (path.startsWith(`${base}/patient/`)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
     return (
         <nav className="bg-white shadow-md border-b-2 border-iov-light-blue">
             <div className="container mx-auto px-4">
@@ -20,12 +39,10 @@ function Navbar({ items }: NavbarProps) {
                         <NavLink
                             key={item.to}
                             to={item.to}
-                            className={({ isActive }) =>
-                                `px-6 py-4 font-medium transition-colors whitespace-nowrap flex items-center gap-2 border-b-4 ${isActive
-                                    ? 'text-iov-dark-blue border-iov-dark-blue'
-                                    : 'text-iov-gray-text border-transparent hover:text-iov-dark-blue hover:border-iov-light-blue'
-                                }`
-                            }
+                            className={`px-6 py-4 font-medium transition-colors whitespace-nowrap flex items-center gap-2 border-b-4 ${isItemActive(item.to)
+                                ? 'text-iov-dark-blue border-iov-dark-blue'
+                                : 'text-iov-gray-text border-transparent hover:text-iov-dark-blue hover:border-iov-light-blue'
+                                }`}
                         >
                             {item.icon}
                             {item.label}

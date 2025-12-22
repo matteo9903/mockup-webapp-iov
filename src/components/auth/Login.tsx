@@ -41,12 +41,9 @@ function Login() {
 
         if (success) {
             // Navigate based on role
-            if (role === 'admin') {
-                // Admin stays on login page (no additional functionality)
-                setIsLoading(false);
-                return;
-            }
             navigate(`/${role}/home`);
+            setIsLoading(false);
+            return;
         } else {
             setError('Credenziali non valide. Inserisci username e password.');
             setIsLoading(false);

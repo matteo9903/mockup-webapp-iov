@@ -1,5 +1,5 @@
 import { LogOut } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
@@ -46,7 +46,7 @@ function Header({ title }: HeaderProps) {
                             onClick={handleLogoClick}
                             className="hover:opacity-80 transition-opacity cursor-pointer p-0 bg-transparent border-none"
                         >
-                            <img src="/logo.svg" alt="IOV logo" className="w-20.5 h-10 rounded-md" />
+                            <img src="/logo.svg" alt="IOV logo" className="w-8 h-8 rounded-md" />
                         </button>
                         <div className="text-2xl font-bold">IOV</div>
                         {title && (

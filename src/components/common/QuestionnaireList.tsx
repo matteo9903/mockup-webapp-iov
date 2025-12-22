@@ -1,31 +1,41 @@
 import { useState } from 'react';
-import { FileText, Calendar, ToggleLeft, ToggleRight, Edit2 } from 'lucide-react';
+import { FileText, Calendar, ToggleLeft, ToggleRight } from 'lucide-react';
+// import { Edit2 } from 'lucide-react'; // Edit functionality disabled
 import { mockQuestionnaires } from '../../data/mockData.ts';
-import Modal from './Modal.tsx';
+import LoadTemplate from './LoadTemplate';
 
 interface QuestionnaireListProps {
     patientId?: string;
     showAll?: boolean;
+    onViewAnswers?: (questionnaireId: string) => void;
 }
 
-function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProps) {
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [frequency, setFrequency] = useState('');
+function QuestionnaireList({ patientId, showAll = false, onViewAnswers }: QuestionnaireListProps) {
+    // const [editingId, setEditingId] = useState<string | null>(null);
+    // const [frequency, setFrequency] = useState('');
+
+    // State for template modal
+    const [templateModal, setTemplateModal] = useState<{
+        isOpen: boolean;
+        templateUrl: string;
+        title?: string;
+        questionnaireId?: string;
+    }>({ isOpen: false, templateUrl: '', title: '', questionnaireId: '' });
 
     const questionnaires = showAll
         ? mockQuestionnaires
         : mockQuestionnaires.filter((q) => q.patientId === patientId || !q.patientId);
 
-    const handleEditFrequency = (id: string, currentFrequency: string) => {
-        setEditingId(id);
-        setFrequency(currentFrequency);
-    };
+    // const handleEditFrequency = (id: string, currentFrequency: string) => {
+    //     setEditingId(id);
+    //     setFrequency(currentFrequency);
+    // };
 
-    const handleSaveFrequency = () => {
-        // In real app, save to backend
-        alert(`Frequenza aggiornata a: ${frequency}`);
-        setEditingId(null);
-    };
+    // const handleSaveFrequency = () => {
+    //     // In real app, save to backend
+    //     alert(`Frequenza aggiornata a: ${frequency}`);
+    //     setEditingId(null);
+    // };
 
     return (
         <div>
@@ -58,12 +68,12 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
                                         <Calendar className="w-4 h-4 text-iov-gray-text" />
                                         <span className="text-iov-gray-text">Frequenza:</span>
                                         <span className="font-medium text-iov-dark-blue capitalize">{questionnaire.frequency}</span>
-                                        <button
+                                        {/* <button
                                             onClick={() => handleEditFrequency(questionnaire.id, questionnaire.frequency)}
                                             className="text-iov-dark-blue hover:text-iov-dark-blue-hover ml-2"
                                         >
                                             <Edit2 className="w-4 h-4" />
-                                        </button>
+                                        </button> */}
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -85,42 +95,40 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
                                 </div>
                             </div>
 
-                            <button className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
-                                Visualizza Template
+                            <button
+                                className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                onClick={() => {
+                                    if (onViewAnswers) {
+                                        onViewAnswers(questionnaire.id);
+                                        return;
+                                    }
+                                    setTemplateModal({
+                                        isOpen: true,
+                                        templateUrl: questionnaire.templateUrl || '',
+                                        title: questionnaire.title,
+                                        questionnaireId: questionnaire.id,
+                                    });
+                                }}
+                            >
+                                Visualizza
                             </button>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Edit Frequency Modal */}
-            <Modal
-                isOpen={editingId !== null}
-                onClose={() => setEditingId(null)}
-                title="Modifica Frequenza"
-                size="sm"
-            >
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-iov-gray-text mb-2">Frequenza</label>
-                        <select
-                            value={frequency}
-                            onChange={(e) => setFrequency(e.target.value)}
-                            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                        >
-                            <option value="giornaliero">Giornaliero</option>
-                            <option value="settimanale">Settimanale</option>
-                            <option value="mensile">Mensile</option>
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleSaveFrequency}
-                        className="w-full bg-iov-dark-blue text-white px-6 py-3 rounded-lg font-medium hover:bg-iov-dark-blue-hover transition-colors"
-                    >
-                        Salva
-                    </button>
-                </div>
-            </Modal>
+            {/* Load Template Modal */}
+            {!onViewAnswers && (
+                <LoadTemplate
+                    isOpen={templateModal.isOpen}
+                    onClose={() => setTemplateModal({ ...templateModal, isOpen: false })}
+                    templateUrl={templateModal.templateUrl}
+                    title={templateModal.title}
+                    questionnaireId={templateModal.questionnaireId}
+                    isActive={mockQuestionnaires.find(q => q.id === templateModal.questionnaireId)?.isActive}
+                    readonly={true}
+                />
+            )}
         </div>
     );
 }

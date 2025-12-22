@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Pill, Stethoscope, UserCog } from 'lucide-react';
+import { Pill, Stethoscope, UserCog, UserPlus } from 'lucide-react';
 
 export type Platform = 'farmacista' | 'clinico' | 'admin';
 
@@ -83,7 +83,21 @@ function PlatformSelector() {
           })}
         </div>
 
+        {/* Registration Section */}
         <div className="mt-12 text-center">
+          <p className="text-iov-gray-text mb-4">
+            Non hai un account?
+          </p>
+          <button
+            onClick={() => navigate('/register')}
+            className="inline-flex items-center gap-2 bg-white text-iov-dark-blue px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow border-2 border-iov-dark-blue"
+          >
+            <UserPlus className="w-5 h-5" />
+            Registrati
+          </button>
+        </div>
+
+        <div className="mt-8 text-center">
           <p className="text-sm text-iov-gray-text opacity-75">
             Demo - Sistema di gestione terapia oncologica IOV
           </p>

@@ -1,26 +1,17 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Users, FileText, Bell, Database, AlertCircle } from 'lucide-react';
-import { mockPatients, mockNotifications, mockPendingApprovals } from '../../data/mockData.ts';
+import { Users, FileText, Bell, Database } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.tsx';
+import { mockPatients, mockNotifications } from '../../data/mockData.ts';
 
 function ClinicoHome() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const doctorName = user?.name || user?.username || 'Utente';
 
     const unreadNotifications = mockNotifications.filter(n => !n.isRead).length;
     const totalPatients = mockPatients.length;
-    const pendingApprovals = mockPendingApprovals.length;
 
     const quickActions = [
-        {
-            title: 'Approvazioni',
-            description: `${pendingApprovals} richieste in attesa`,
-            icon: CheckSquare,
-            color: 'bg-iov-yellow',
-            textColor: 'text-iov-yellow-text',
-            borderColor: 'border-iov-yellow-dark',
-            onClick: () => navigate('/clinico/approvals'),
-            badge: pendingApprovals > 0 ? pendingApprovals : undefined,
-            urgent: pendingApprovals > 0,
-        },
         {
             title: 'Lista Pazienti',
             description: `${totalPatients} pazienti totali`,
@@ -64,27 +55,25 @@ function ClinicoHome() {
         <div>
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">
-                    Benvenuto, Clinico
+                    Benvenuto, Dr. {doctorName}
                 </h1>
                 <p className="text-iov-gray-text">
                     Gestisci le approvazioni e supervisiona le terapie oncologiche
                 </p>
             </div>
 
-            {/* Urgent alerts */}
-            {pendingApprovals > 0 && (
-                <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-8">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle className="w-8 h-8 text-yellow-600 flex-shrink-0" />
-                        <div>
-                            <h3 className="text-lg font-bold text-yellow-900 mb-1">
-                                Attenzione: Richieste in Attesa
-                            </h3>
-                            <p className="text-yellow-800">
-                                Ci sono <strong>{pendingApprovals}</strong> richieste di approvazione in attesa. Rivedi e approva le
-                                richieste per permettere l'inizio delle terapie.
-                            </p>
+            {/* Notifications alert */}
+            {unreadNotifications > 0 && (
+                <div className="mb-8 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-center gap-4 cursor-pointer hover:bg-blue-100 transition-colors duration-300" onClick={() => navigate('/clinico/notifications')}>
+                    <div className="relative">
+                        <Bell className="w-8 h-8 text-blue-600" />
+                        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                            {unreadNotifications}
                         </div>
+                    </div>
+                    <div>
+                        <p className="font-semibold text-iov-dark-blue">{unreadNotifications} {unreadNotifications > 1 ? 'notifiche' : 'notifica'} non lett{unreadNotifications > 1 ? 'e' : 'a'}</p>
+                        <p className="text-sm text-iov-gray-text">Clicca per visualizzare</p>
                     </div>
                 </div>
             )}
@@ -96,8 +85,7 @@ function ClinicoHome() {
                         <button
                             key={action.title}
                             onClick={action.onClick}
-                            className={`${action.color} rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 text-left group hover:-translate-y-1 border-2 ${action.borderColor} hover:border-opacity-100 border-opacity-50 relative overflow-hidden ${action.urgent ? 'ring-4 ring-yellow-400 ring-opacity-50' : ''
-                                }`}
+                            className={`${action.color} rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 text-left group hover:-translate-y-1 border-2 ${action.borderColor} hover:border-opacity-100 border-opacity-50 relative overflow-hidden`}
                         >
                             {/* Badge */}
                             {action.badge && (

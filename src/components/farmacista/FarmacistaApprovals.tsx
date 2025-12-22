@@ -1,43 +1,24 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, Eye, Calendar, User } from 'lucide-react';
+import { CheckCircle, Eye, Calendar } from 'lucide-react';
 import { mockPendingApprovals } from '../../data/mockData.ts';
 import { PendingApproval } from '../../types/index.ts';
 import { formatDrugDosage, formatDrugSchedule } from '../../utils/drugFormat.ts';
 import Modal from '../common/Modal.tsx';
 
-function ApprovalsQueue() {
+function FarmacistaApprovals() {
     const [selectedApproval, setSelectedApproval] = useState<PendingApproval | null>(null);
-    const [notes, setNotes] = useState('');
-
-    const handleApprove = () => {
-        if (selectedApproval) {
-            alert(`Richiesta approvata per ${selectedApproval.patientName} ${selectedApproval.patientSurname}`);
-            setSelectedApproval(null);
-            setNotes('');
-        }
-    };
-
-    const handleReject = () => {
-        if (selectedApproval && notes.trim()) {
-            alert(`Richiesta rifiutata per ${selectedApproval.patientName} ${selectedApproval.patientSurname}\nMotivo: ${notes}`);
-            setSelectedApproval(null);
-            setNotes('');
-        } else {
-            alert('Inserisci una motivazione per il rifiuto');
-        }
-    };
 
     return (
         <div>
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">Coda Approvazioni</h1>
-                <p className="text-iov-gray-text">Rivedi e approva le richieste di onboarding pazienti</p>
+                <h1 className="text-3xl font-bold text-iov-dark-blue mb-2">Approvazioni</h1>
+                <p className="text-iov-gray-text">Visualizza le richieste di onboarding pazienti</p>
             </div>
 
             {mockPendingApprovals.length === 0 && (
                 <div className="bg-white rounded-xl shadow-md p-12 text-center">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-iov-dark-blue mb-2">Nessuna richiesta in attesa</h2>
+                    <h2 className="text-2xl font-bold text-iov-dark-blue mb-2">Nessuna richiesta disponibile</h2>
                     <p className="text-iov-gray-text">Tutte le richieste sono state processate</p>
                 </div>
             )}
@@ -52,7 +33,9 @@ function ApprovalsQueue() {
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="bg-iov-light-blue w-12 h-12 rounded-full flex items-center justify-center">
-                                        <User className="w-6 h-6 text-iov-dark-blue-text" />
+                                        <span className="text-lg font-bold text-iov-dark-blue-text">
+                                            {approval.patientName.charAt(0)}{approval.patientSurname.charAt(0)}
+                                        </span>
                                     </div>
                                     <div>
                                         <h3 className="text-xl font-bold text-iov-dark-blue">
@@ -69,15 +52,9 @@ function ApprovalsQueue() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-iov-gray-text mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Calendar className="w-4 h-4" />
-                                        <span>Inviata: {approval.submittedAt.toLocaleDateString('it-IT')}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <User className="w-4 h-4" />
-                                        <span>Da: {approval.submittedBy}</span>
-                                    </div>
+                                <div className="flex items-center gap-2 text-sm text-iov-gray-text mb-4">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>Inviata: {approval.submittedAt.toLocaleDateString('it-IT')}</span>
                                 </div>
 
                                 <div className="bg-iov-light-blue p-4 rounded-lg mb-4">
@@ -98,7 +75,7 @@ function ApprovalsQueue() {
                                     className="bg-iov-dark-blue text-white px-4 py-2 rounded-lg font-medium hover:bg-iov-dark-blue-hover transition-colors flex items-center gap-2 whitespace-nowrap"
                                 >
                                     <Eye className="w-4 h-4" />
-                                    Rivedi
+                                    Visualizza
                                 </button>
                             </div>
                         </div>
@@ -109,11 +86,8 @@ function ApprovalsQueue() {
             {/* Approval Detail Modal */}
             <Modal
                 isOpen={selectedApproval !== null}
-                onClose={() => {
-                    setSelectedApproval(null);
-                    setNotes('');
-                }}
-                title="Dettaglio Richiesta Approvazione"
+                onClose={() => setSelectedApproval(null)}
+                title="Dettaglio Richiesta"
                 size="lg"
             >
                 {selectedApproval && (
@@ -188,35 +162,13 @@ function ApprovalsQueue() {
                             </div>
                         </div>
 
-                        {/* Notes */}
-                        <div>
-                            <label className="block text-sm font-medium text-iov-gray-text mb-2">
-                                Note (obbligatorie per rifiuto)
-                            </label>
-                            <textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none"
-                                rows={4}
-                                placeholder="Inserisci eventuali note o motivazioni..."
-                            />
-                        </div>
-
-                        {/* Actions */}
+                        {/* Close Button */}
                         <div className="flex items-center gap-4 pt-4 border-t-2 border-gray-200">
                             <button
-                                onClick={handleApprove}
-                                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                                onClick={() => setSelectedApproval(null)}
+                                className="flex-1 bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
                             >
-                                <CheckCircle className="w-5 h-5" />
-                                Approva
-                            </button>
-                            <button
-                                onClick={handleReject}
-                                className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <XCircle className="w-5 h-5" />
-                                Rifiuta
+                                Chiudi
                             </button>
                         </div>
                     </div>
@@ -226,4 +178,4 @@ function ApprovalsQueue() {
     );
 }
 
-export default ApprovalsQueue;
+export default FarmacistaApprovals;
