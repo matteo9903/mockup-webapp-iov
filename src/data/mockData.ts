@@ -879,43 +879,27 @@ export const mockPendingApprovals: PendingApproval[] = [
 export const mockQuestionnaires: Questionnaire[] = [
     {
         id: 'q1',
-        title: 'Questionario Qualità di Vita',
-        description: 'Valutazione della qualità di vita del paziente oncologico',
-        frequency: 'settimanale',
+        title: 'Questionario Disturbi',
+        description: 'Raccolta disturbi avvertiti e intensita',
+        frequency: 'giornaliero',
         isActive: true,
-        templateUrl: '/templates/quality-of-life.pdf',
+        templateUrl: '/templates/symptoms.pdf',
     },
     {
         id: 'q2',
-        title: 'Questionario Effetti Collaterali',
-        description: 'Monitoraggio degli effetti collaterali della terapia',
-        frequency: 'giornaliero',
+        title: 'Nuove Terapie nel Ciclo',
+        description: 'Verifica assunzione di nuove terapie, integratori o prodotti naturali',
+        frequency: 'ogni 14 giorni',
         isActive: true,
-        templateUrl: '/templates/side-effects.pdf',
+        templateUrl: '/templates/new-therapies.pdf',
     },
     {
         id: 'q3',
-        title: 'Questionario Dolore',
-        description: 'Scala di valutazione del dolore',
+        title: 'Assunzione Farmaco Giornaliera',
+        description: 'Conferma assunzione del farmaco e motivazione in caso di mancata assunzione',
         frequency: 'giornaliero',
         isActive: true,
-        templateUrl: '/templates/pain-scale.pdf',
-    },
-    {
-        id: 'q4',
-        title: 'Questionario Nutrizione',
-        description: 'Valutazione dello stato nutrizionale',
-        frequency: 'mensile',
-        isActive: true,
-        templateUrl: '/templates/nutrition.pdf',
-    },
-    {
-        id: 'q5',
-        title: 'Questionario Benessere Psicologico',
-        description: 'Valutazione del benessere psicologico',
-        frequency: 'settimanale',
-        isActive: false,
-        templateUrl: '/templates/psychological-wellbeing.pdf',
+        templateUrl: '/templates/medication-intake.pdf',
     },
 ];
 
@@ -1102,43 +1086,39 @@ export const mockExportJobs = [
 export const mockSatisfactionQuestions = [
     {
         id: 'qst1',
-        text: 'Quanto sei soddisfatto dell’efficacia della terapia che stai seguendo?',
+        text: 'Quali disturbi hai avvertito?',
     },
     {
         id: 'qst2',
-        text: 'Hai riscontrato effetti collaterali che ti preoccupano durante la terapia?',
+        text: 'Indicare intensita del disturbo',
+    },
+];
+
+// Mocked questions about new therapies during the cycle
+export const mockNewTherapiesQuestions = [
+    {
+        id: 'qnt1',
+        text: 'In questo ciclo di terapia, ha iniziato ad assumere altre nuove terapie, inclusi integratori o prodotti naturali?',
     },
     {
-        id: 'qst3',
-        text: 'Quanto ti senti supportato dal personale medico durante il trattamento?',
+        id: 'qnt2',
+        text: 'Indicare quali farmaci o prodotti dalla lista',
     },
     {
-        id: 'qst4',
-        text: 'La terapia ha migliorato la tua qualità di vita?',
+        id: 'qnt3',
+        text: 'Quando li assume?',
+    },
+];
+
+// Mocked questions about daily medication intake
+export const mockMedicationIntakeQuestions = [
+    {
+        id: 'qmed1',
+        text: "E' stato assunto il farmaco?",
     },
     {
-        id: 'qst5',
-        text: 'Hai avuto difficoltà a seguire le indicazioni terapeutiche?',
-    },
-    {
-        id: 'qst6',
-        text: 'Quanto ritieni chiara la comunicazione sulle modalità di assunzione dei farmaci?',
-    },
-    {
-        id: 'qst7',
-        text: 'Hai avuto problemi a reperire i farmaci prescritti?',
-    },
-    {
-        id: 'qst8',
-        text: 'Quanto sei soddisfatto del supporto psicologico ricevuto durante la terapia?',
-    },
-    {
-        id: 'qst9',
-        text: 'Ritieni che la terapia abbia risposto alle tue aspettative?',
-    },
-    {
-        id: 'qst10',
-        text: 'Consiglieresti il percorso terapeutico che stai seguendo ad altri pazienti?',
+        id: 'qmed2',
+        text: 'Se no, specificare il motivo',
     },
 ];
 
@@ -1183,5 +1163,238 @@ export const mockPainQuestions = [
     {
         id: 'qpain10',
         text: 'Vorresti apportare modifiche al tuo piano di gestione del dolore?',
+    },
+];
+
+type QuestionnaireAnswer = {
+    id: string;
+    patientId: string;
+    patientName: string;
+    patientSurname: string;
+    questionnaireId: string;
+    answeredAt: Date;
+    // Answers can be numeric scale (0-2), yes/no, lists, or free text.
+    answers: Record<string, 0 | 1 | 2 | string | string[]>;
+};
+
+// Mocked questionnaire answers by patients
+export const mockQuestionnaireAnswers: QuestionnaireAnswer[] = [
+    {
+        id: 'qa1',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(1),
+        answers: {
+            qst1: ['nausea', 'headache'],
+            qst2: 1,
+        },
+    },
+    {
+        id: 'qa2',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(2),
+        answers: {
+            qst1: ['stomachache'],
+            qst2: 1,
+        },
+    },
+    {
+        id: 'qa3',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(3),
+        answers: {
+            qst1: ['saltato: febbre'],
+            qst2: 0,
+        },
+    },
+    {
+        id: 'qa4',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(4),
+        answers: {
+            qst1: ['vomit'],
+            qst2: 2,
+        },
+    },
+    {
+        id: 'qa5',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(1),
+        answers: {
+            qst1: ['stomachache', 'anxiety'],
+            qst2: 2,
+        },
+    },
+    {
+        id: 'qa6',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(2),
+        answers: {
+            qst1: ['headache'],
+            qst2: 0,
+        },
+    },
+    {
+        id: 'qa7',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(3),
+        answers: {
+            qst1: ['saltato: terapia ospedaliera'],
+            qst2: 0,
+        },
+    },
+    {
+        id: 'qa8',
+        patientId: 'p6',
+        patientName: 'Chiara',
+        patientSurname: 'Russo',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(1),
+        answers: {
+            qst1: ['vomit', 'diarrhea'],
+            qst2: 2,
+        },
+    },
+    {
+        id: 'qa9',
+        patientId: 'p6',
+        patientName: 'Chiara',
+        patientSurname: 'Russo',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(2),
+        answers: {
+            qst1: ['anxiety'],
+            qst2: 0,
+        },
+    },
+    {
+        id: 'qa10',
+        patientId: 'p6',
+        patientName: 'Chiara',
+        patientSurname: 'Russo',
+        questionnaireId: 'q1',
+        answeredAt: daysAgo(3),
+        answers: {
+            qst1: ['saltato: dimenticato'],
+            qst2: 0,
+        },
+    },
+    {
+        id: 'qa11',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q2',
+        answeredAt: daysAgo(6),
+        answers: {
+            qnt1: 'si',
+            qnt2: ['paracetamolo', 'melatonina'],
+            qnt3: 'occasionalmente',
+        },
+    },
+    {
+        id: 'qa12',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q2',
+        answeredAt: daysAgo(13),
+        answers: {
+            qnt1: 'no',
+            qnt2: [],
+            qnt3: '',
+        },
+    },
+    {
+        id: 'qa13',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(1),
+        answers: {
+            qmed1: 'si',
+            qmed2: '',
+        },
+    },
+    {
+        id: 'qa14',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(2),
+        answers: {
+            qmed1: 'no',
+            qmed2: 'nausea intensa',
+        },
+    },
+    {
+        id: 'qa15',
+        patientId: 'p1',
+        patientName: 'Mario',
+        patientSurname: 'Rossi',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(3),
+        answers: {
+            qmed1: 'si',
+            qmed2: '',
+        },
+    },
+    {
+        id: 'qa16',
+        patientId: 'p6',
+        patientName: 'Chiara',
+        patientSurname: 'Russo',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(2),
+        answers: {
+            qmed1: 'no',
+            qmed2: 'nausea intensa',
+        },
+    },
+    {
+        id: 'qa17',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(1),
+        answers: {
+            qmed1: 'no',
+            qmed2: 'saltato: fuori casa',
+        },
+    },
+    {
+        id: 'qa18',
+        patientId: 'p2',
+        patientName: 'Anna',
+        patientSurname: 'Bianchi',
+        questionnaireId: 'q3',
+        answeredAt: daysAgo(2),
+        answers: {
+            qmed1: 'si',
+            qmed2: '',
+        },
     },
 ];

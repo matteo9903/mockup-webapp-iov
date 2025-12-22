@@ -8,7 +8,7 @@ import { formatDrugDosage, formatDrugSchedule, formatDosageValue, formatSchedule
 type Step = 1 | 2 | 3;
 const scheduleFrequencyOptions: { value: DrugScheduleFrequency; label: string }[] = [
     { value: 'DAILY', label: 'Giornaliero' },
-    { value: 'EVERY_OTHER_DAY', label: 'Ogni altro giorno' },
+    { value: 'EVERY_OTHER_DAY', label: 'Giorni alterni' },
     { value: 'ODD_DAYS', label: 'Giorni dispari' },
     { value: 'EVEN_DAYS', label: 'Giorni pari' },
     { value: 'CUSTOM', label: 'Personalizzato' },
@@ -364,7 +364,7 @@ function PatientOnboarding() {
                                                             />
                                                         </div>
                                                         <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Unità (unity)</label>
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">Unità</label>
                                                             <select
                                                                 value={dosage.unit || ''}
                                                                 onChange={(e) =>

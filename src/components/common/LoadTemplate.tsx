@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import Modal from './Modal';
-import { mockSatisfactionQuestions, mockPainQuestions } from '../../data/mockData';
+import {
+  mockSatisfactionQuestions,
+  mockNewTherapiesQuestions,
+  mockMedicationIntakeQuestions,
+} from '../../data/mockData';
 import { Edit2, Plus, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface Question {
@@ -30,15 +34,12 @@ const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUr
   // Determine which questions to display based on questionnaire ID
   const getDefaultQuestions = (): Question[] => {
     switch (questionnaireId) {
-      // Load satisfaction questions for these questionnaires
-      case 'q1': // Questionario Qualità di Vita
-      case 'q4': // Questionario Nutrizione
-      case 'q5': // Questionario Benessere Psicologico
+      case 'q1':
         return mockSatisfactionQuestions;
-      // Load pain questions for these questionnaires
-      case 'q2': // Questionario Effetti Collaterali
-      case 'q3': // Questionario Dolore
-        return mockPainQuestions;
+      case 'q2':
+        return mockNewTherapiesQuestions;
+      case 'q3':
+        return mockMedicationIntakeQuestions;
       default:
         return [];
     }
@@ -93,7 +94,7 @@ const LoadTemplate: React.FC<LoadTemplateProps> = ({ isOpen, onClose, templateUr
   const currentQuestions = questions.length > 0 ? questions : defaultQuestions;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title || 'Visualizza Template'} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={title || 'Visualizza Risposte'} size="lg">
       <div className="w-full max-h-[70vh] overflow-y-auto">
         {hasQuestions ? (
           <>

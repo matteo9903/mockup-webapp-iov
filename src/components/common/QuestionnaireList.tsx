@@ -7,9 +7,10 @@ import LoadTemplate from './LoadTemplate';
 interface QuestionnaireListProps {
     patientId?: string;
     showAll?: boolean;
+    onViewAnswers?: (questionnaireId: string) => void;
 }
 
-function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProps) {
+function QuestionnaireList({ patientId, showAll = false, onViewAnswers }: QuestionnaireListProps) {
     // const [editingId, setEditingId] = useState<string | null>(null);
     // const [frequency, setFrequency] = useState('');
 
@@ -96,9 +97,20 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
 
                             <button
                                 className="bg-iov-yellow text-iov-yellow-text px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity"
-                                onClick={() => setTemplateModal({ isOpen: true, templateUrl: questionnaire.templateUrl || '', title: questionnaire.title, questionnaireId: questionnaire.id })}
+                                onClick={() => {
+                                    if (onViewAnswers) {
+                                        onViewAnswers(questionnaire.id);
+                                        return;
+                                    }
+                                    setTemplateModal({
+                                        isOpen: true,
+                                        templateUrl: questionnaire.templateUrl || '',
+                                        title: questionnaire.title,
+                                        questionnaireId: questionnaire.id,
+                                    });
+                                }}
                             >
-                                Visualizza Template
+                                Visualizza
                             </button>
                         </div>
                     </div>
@@ -106,15 +118,17 @@ function QuestionnaireList({ patientId, showAll = false }: QuestionnaireListProp
             </div>
 
             {/* Load Template Modal */}
-            <LoadTemplate
-                isOpen={templateModal.isOpen}
-                onClose={() => setTemplateModal({ ...templateModal, isOpen: false })}
-                templateUrl={templateModal.templateUrl}
-                title={templateModal.title}
-                questionnaireId={templateModal.questionnaireId}
-                isActive={mockQuestionnaires.find(q => q.id === templateModal.questionnaireId)?.isActive}
-                readonly={true}
-            />
+            {!onViewAnswers && (
+                <LoadTemplate
+                    isOpen={templateModal.isOpen}
+                    onClose={() => setTemplateModal({ ...templateModal, isOpen: false })}
+                    templateUrl={templateModal.templateUrl}
+                    title={templateModal.title}
+                    questionnaireId={templateModal.questionnaireId}
+                    isActive={mockQuestionnaires.find(q => q.id === templateModal.questionnaireId)?.isActive}
+                    readonly={true}
+                />
+            )}
         </div>
     );
 }

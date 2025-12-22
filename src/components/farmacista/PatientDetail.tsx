@@ -1,7 +1,15 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, FileText, Bell, Plus } from 'lucide-react';
-import { mockPatients, mockDrugs } from '../../data/mockData.ts';
+import {
+    mockPatients,
+    mockDrugs,
+    mockQuestionnaireAnswers,
+    mockQuestionnaires,
+    mockSatisfactionQuestions,
+    mockNewTherapiesQuestions,
+    mockMedicationIntakeQuestions,
+} from '../../data/mockData.ts';
 import {
     Drug,
     DrugPhase,
@@ -20,7 +28,7 @@ type Tab = 'info' | 'questionnaires' | 'notifications';
 
 const scheduleFrequencyOptions: { value: DrugScheduleFrequency; label: string }[] = [
     { value: 'DAILY', label: 'Giornaliero' },
-    { value: 'EVERY_OTHER_DAY', label: 'Ogni altro giorno' },
+    { value: 'EVERY_OTHER_DAY', label: 'Giorni alterni' },
     { value: 'ODD_DAYS', label: 'Giorni dispari' },
     { value: 'EVEN_DAYS', label: 'Giorni pari' },
     { value: 'CUSTOM', label: 'Personalizzato' },
@@ -41,6 +49,19 @@ const getDefaultPhaseWindow = () => {
     endDate.setDate(endDate.getDate() + 6);
     const end = endDate.toISOString().split('T')[0];
     return { start, end };
+};
+
+const getQuestionsForQuestionnaire = (questionnaireId?: string) => {
+    switch (questionnaireId) {
+        case 'q1':
+            return mockSatisfactionQuestions;
+        case 'q2':
+            return mockNewTherapiesQuestions;
+        case 'q3':
+            return mockMedicationIntakeQuestions;
+        default:
+            return [];
+    }
 };
 
 const createEmptyPhase = (drug: Drug): DrugPhase => {
@@ -165,11 +186,45 @@ function PatientDetail() {
     const [newTherapyEnd, setNewTherapyEnd] = useState('');
     const [newTherapyDrugs, setNewTherapyDrugs] = useState<Drug[]>([]);
     const [newProtocolToAdd, setNewProtocolToAdd] = useState('');
+    const [selectedQuestionnaireId, setSelectedQuestionnaireId] = useState<string | null>(null);
+    const questionnaireAnswersRef = useRef<HTMLDivElement | null>(null);
 
     const patient = mockPatients.find((p) => p.id === id);
     const [therapyPlan, setTherapyPlan] = useState<TherapyPlan | undefined>(patient?.therapyPlan);
     const therapyHistory: TherapyPlanHistoryEntry[] = patient?.therapyHistory ?? [];
     const availableProtocols = mockDrugs;
+    const patientQuestionnaireAnswers = mockQuestionnaireAnswers
+        .filter((entry) => entry.patientId === patient?.id)
+        .sort((a, b) => b.answeredAt.getTime() - a.answeredAt.getTime());
+    const filteredQuestionnaireAnswers = selectedQuestionnaireId
+        ? patientQuestionnaireAnswers.filter((entry) => entry.questionnaireId === selectedQuestionnaireId)
+        : patientQuestionnaireAnswers;
+    const selectedQuestionnaireLabel = selectedQuestionnaireId
+        ? mockQuestionnaires.find((questionnaire) => questionnaire.id === selectedQuestionnaireId)?.title
+        : null;
+    const answerLabels: Record<0 | 1 | 2, string> = {
+        0: 'Per niente',
+        1: 'Medio',
+        2: 'Alto',
+    };
+    const formatAnswerValue = (value?: 0 | 1 | 2 | string | string[]) => {
+        if (value === undefined) {
+            return '—';
+        }
+        if (Array.isArray(value)) {
+            return value.length ? value.join(', ') : '—';
+        }
+        if (typeof value === 'string') {
+            return value || '—';
+        }
+        return value + ' (' + answerLabels[value] + ')';
+    };
+    const handleViewAnswers = (questionnaireId: string) => {
+        setSelectedQuestionnaireId(questionnaireId);
+        window.setTimeout(() => {
+            questionnaireAnswersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 0);
+    };
 
     if (!patient) {
         return (
@@ -401,7 +456,7 @@ function PatientDetail() {
                                                             />
                                                         </div>
                                                         <div>
-                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Unità (unity)</label>
+                                                        <label className="block text-xs font-medium text-gray-600 mb-1">Unità</label>
                                                             <select
                                                                 value={dosage.unit || ''}
                                                                 onChange={(e) =>
@@ -925,7 +980,71 @@ function PatientDetail() {
                     </div>
                 )}
 
-                {activeTab === 'questionnaires' && <QuestionnaireList patientId={patient.id} />}
+                {activeTab === 'questionnaires' && (
+                    <div className="space-y-6">
+                        <QuestionnaireList patientId={patient.id} onViewAnswers={handleViewAnswers} />
+                        <div ref={questionnaireAnswersRef} className="bg-gray-100 p-6 rounded-lg">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+                                <div>
+                                    <h2 className="text-xl font-bold text-iov-dark-blue">Risposte questionari</h2>
+                                    {selectedQuestionnaireLabel && (
+                                        <p className="text-xs text-iov-dark-blue">Filtro: {selectedQuestionnaireLabel}</p>
+                                    )}
+                                </div>
+                                <span className="text-xs text-gray-500">Legenda intensita: 0 = Per niente, 1 = Medio, 2 = Alto</span>
+                            </div>
+                            {filteredQuestionnaireAnswers.length === 0 ? (
+                                <p className="text-sm text-gray-600">Nessuna risposta disponibile per questo paziente.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {filteredQuestionnaireAnswers.map((entry) => {
+                                        const questionnaire = mockQuestionnaires.find((q) => q.id === entry.questionnaireId);
+                                        const questions = getQuestionsForQuestionnaire(entry.questionnaireId);
+                                        const responseCount = Object.keys(entry.answers).length;
+
+                                        return (
+                                            <div key={entry.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-iov-dark-blue">
+                                                            {questionnaire?.title ?? 'Questionario'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-600">
+                                                            Compilato il {entry.answeredAt.toLocaleDateString('it-IT')}
+                                                        </p>
+                                                    </div>
+                                                    <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                                                        {responseCount} risposte
+                                                    </span>
+                                                </div>
+                                                <div className="mt-3 space-y-3">
+                                                    {(questions.length ? questions : Object.keys(entry.answers).map((id) => ({ id, text: id }))).map(
+                                                        (question, index) => {
+                                                            const value = entry.answers[question.id];
+                                                            return (
+                                                                <div
+                                                                    key={`${entry.id}-${question.id}`}
+                                                                    className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 border-b border-dashed border-gray-200 pb-2 last:border-b-0 last:pb-0"
+                                                                >
+                                                                    <p className="text-sm text-gray-700">
+                                                                        {index + 1}. {question.text}
+                                                                    </p>
+                                                                    <span className="text-sm font-semibold text-iov-dark-blue">
+                                                                        {formatAnswerValue(value)}
+                                                                    </span>
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {activeTab === 'notifications' && <NotificationsList patientId={patient.id} />}
             </div>
