@@ -166,8 +166,30 @@ export interface Questionnaire {
   description: string;
   frequency: string; // e.g., "daily", "weekly", "monthly"
   isActive: boolean;
-  templateUrl?: string; // PDF placeholder
-  patientId?: string; // if assigned to specific patient
+  groups?: QuestionnaireGroup[];
+}
+
+export interface QuestionnaireGroup {
+  id?: string;
+  title: string;
+  displayOrder: number;
+  legend?: QuestionnaireAnswerOption[];
+  questions: QuestionnaireQuestion[];
+}
+
+export interface QuestionnaireQuestion {
+  id: string;
+  text: string;
+  type: string;
+  required: boolean;
+  displayOrder: number;
+  options: QuestionnaireAnswerOption[];
+}
+
+export interface QuestionnaireAnswerOption {
+  id: string;
+  text: string;
+  displayOrder: number;
 }
 
 // Notification
@@ -190,10 +212,29 @@ export interface User {
   surname: string;
 }
 
+export interface RegisterPayload {
+  role: Exclude<UserRole, 'admin'>;
+  email: string;
+  password: string;
+  name: string;
+  surname: string;
+  fiscalCode: string;
+  telephone?: string | null;
+  sedeIov?: string | null;
+  unitaOperativaId?: number | null;
+}
+
+export interface AuthResult {
+  ok: boolean;
+  error?: string;
+  role?: UserRole;
+}
+
 // Auth Context State
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (role: UserRole, username: string, password: string) => Promise<boolean>;
+  login: (role: UserRole, username: string, password: string) => Promise<AuthResult>;
+  register: (payload: RegisterPayload) => Promise<AuthResult>;
   logout: () => void;
 }

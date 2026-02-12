@@ -1003,7 +1003,6 @@ export const mockQuestionnaires: Questionnaire[] = [
         description: 'Raccolta disturbi avvertiti e intensita',
         frequency: 'giornaliero',
         isActive: true,
-        templateUrl: '/templates/symptoms.pdf',
     },
     {
         id: 'q2',
@@ -1011,7 +1010,6 @@ export const mockQuestionnaires: Questionnaire[] = [
         description: 'Verifica assunzione di nuove terapie, integratori o prodotti naturali',
         frequency: 'ogni 14 giorni',
         isActive: true,
-        templateUrl: '/templates/new-therapies.pdf',
     },
     {
         id: 'q3',
@@ -1019,7 +1017,6 @@ export const mockQuestionnaires: Questionnaire[] = [
         description: 'Conferma assunzione del farmaco e motivazione in caso di mancata assunzione',
         frequency: 'giornaliero',
         isActive: true,
-        templateUrl: '/templates/medication-intake.pdf',
     },
 ];
 

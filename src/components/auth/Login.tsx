@@ -8,7 +8,7 @@ function Login() {
     const { role } = useParams<{ role: UserRole }>();
     const navigate = useNavigate();
     const { login } = useAuth();
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -37,15 +37,15 @@ function Login() {
             return;
         }
 
-        const success = await login(role, username, password);
+        const result = await login(role, email, password);
 
-        if (success) {
+        if (result.ok) {
             // Navigate based on role
             navigate(`/${role}/home`);
             setIsLoading(false);
             return;
         } else {
-            setError('Credenziali non valide. Inserisci username e password.');
+            setError(result.error ?? 'Credenziali non valide. Inserisci email e password.');
             setIsLoading(false);
         }
     };
@@ -83,16 +83,16 @@ function Login() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Username */}
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-iov-gray-text mb-2">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium text-iov-gray-text mb-2">
+                                Email
                             </label>
                             <input
-                                type="text"
-                                id="username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none transition-colors"
-                                placeholder="Inserisci username"
+                                placeholder="Inserisci email"
                                 required
                             />
                         </div>
@@ -129,13 +129,6 @@ function Login() {
                             {isLoading ? 'Accesso in corso...' : 'Accedi'}
                         </button>
                     </form>
-
-                    {/* Demo note */}
-                    <div className="mt-6 text-center">
-                        <p className="text-xs text-iov-gray-text opacity-75">
-                            Demo - Inserisci qualsiasi username e password
-                        </p>
-                    </div>
                 </div>
             </div>
         </div>

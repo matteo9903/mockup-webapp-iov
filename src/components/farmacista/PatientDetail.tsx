@@ -1199,7 +1199,7 @@ function PatientDetail() {
 
                 {activeTab === 'questionnaires' && (
                     <div className="space-y-6">
-                        <QuestionnaireList patientId={patient.id} onViewAnswers={handleViewAnswers} />
+                        <QuestionnaireList onViewAnswers={handleViewAnswers} />
                         <div ref={questionnaireAnswersRef} className="bg-gray-100 p-6 rounded-lg">
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
                                 <div>

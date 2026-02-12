@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 function Register() {
     const navigate = useNavigate();
+    const { register } = useAuth();
     const [formData, setFormData] = useState({
         ruolo: 'clinico',
         nome: '',
@@ -17,18 +19,22 @@ function Register() {
     const [showRepeatPassword, setShowRepeatPassword] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
+        const normalizedValue = name === 'codiceFiscale' ? value.toUpperCase() : value;
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [name]: normalizedValue,
         }));
         setError('');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
+        setSuccess(false);
 
         // Validation
         if (!formData.nome.trim()) {
@@ -59,8 +65,8 @@ function Register() {
             setError('Password è obbligatoria');
             return;
         }
-        if (formData.password.length < 6) {
-            setError('Password deve essere almeno 6 caratteri');
+        if (formData.password.length < 8) {
+            setError('Password deve essere almeno 8 caratteri');
             return;
         }
         if (formData.password !== formData.ripeti_password) {
@@ -68,16 +74,31 @@ function Register() {
             return;
         }
 
-        // Registration successful
-        setSuccess(true);
-        alert(
-            `Registrazione completata!\n\nRuolo: ${formData.ruolo}\nNome: ${formData.nome} ${formData.cognome}\nEmail: ${formData.email}`
-        );
+        setIsLoading(true);
+        const result = await register({
+            role: formData.ruolo === 'farmacista' ? 'farmacista' : 'clinico',
+            email: formData.email,
+            password: formData.password,
+            name: formData.nome,
+            surname: formData.cognome,
+            fiscalCode: formData.codiceFiscale,
+            telephone: null,
+            sedeIov: null,
+            unitaOperativaId: null,
+        });
 
-        // Redirect to login after a short delay
+        if (!result.ok) {
+            setError(result.error ?? 'Registrazione fallita');
+            setIsLoading(false);
+            return;
+        }
+
+        setSuccess(true);
+        const nextRole = result.role ?? (formData.ruolo === 'farmacista' ? 'farmacista' : 'clinico');
         setTimeout(() => {
-            navigate('/');
-        }, 2000);
+            navigate(`/${nextRole}/home`);
+        }, 1000);
+        setIsLoading(false);
     };
 
     return (
@@ -105,7 +126,7 @@ function Register() {
 
                     {success && (
                         <div className="bg-green-100 border-2 border-green-500 text-green-700 px-4 py-3 rounded-lg mb-6">
-                            Registrazione completata! Reindirizzamento in corso...
+                            Registrazione completata! Accesso in corso...
                         </div>
                     )}
 
@@ -187,7 +208,7 @@ function Register() {
                                     name="password"
                                     value={formData.password}
                                     onChange={handleChange}
-                                    placeholder="Minimo 6 caratteri"
+                                    placeholder="Minimo 8 caratteri"
                                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-iov-dark-blue focus:outline-none transition"
                                 />
                                 <button
@@ -225,10 +246,10 @@ function Register() {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={success}
+                            disabled={success || isLoading}
                             className="w-full bg-iov-dark-blue text-white py-3 rounded-lg font-semibold hover:bg-iov-dark-blue-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                         >
-                            Registrati
+                            {isLoading ? 'Registrazione in corso...' : 'Registrati'}
                         </button>
 
                         {/* Login Link */}
